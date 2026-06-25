@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pantallas/perfil.dart';
-import 'pantallas/nivel.dart';
-import 'pantallas/menu.dart';
+import 'pantallas/pantalla_carga.dart'; // <-- O la ruta exacta donde guardaste este archivo
 
 void main() {
   runApp(const CazadoresApp());
@@ -12,54 +10,10 @@ class CazadoresApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp( // <-- Agrega const aquí si es posible
       debugShowCheckedModeBanner: false,
       title: 'Cazadores de Pigmentos',
-      theme: ThemeData(primarySwatch: Colors.indigo),
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  
-  final List<Widget> _paginas = [
-    const PerfilPantalla(),
-    const NivelPantalla(),
-    const MenuPantalla(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cazadores de Pigmentos'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
-      body: _paginas[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          BottomNavigationBarItem(icon: Icon(Icons.videogame_asset), label: 'Nivel'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menú'),
-        ],
-      ),
+      home: const PantallaDeCarga(), // <-- Debe apuntar directamente aquí
     );
   }
 }
