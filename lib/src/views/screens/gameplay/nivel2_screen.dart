@@ -1,160 +1,104 @@
 import 'package:flutter/material.dart';
 import '../../../controllers/nivel2_controller.dart';
-import '../../../controllers/user_controller.dart';
+import '../../../models/level_model.dart';
 import '../../widgets/game_button.dart';
-import '../../widgets/game_bottom_sheet.dart';
+import 'base_gameplay_screen.dart';
 
-class Nivel2Screen extends StatefulWidget {
+class Nivel2Screen extends StatelessWidget {
   final int nivelInicial;
+
   const Nivel2Screen({super.key, required this.nivelInicial});
-
-  @override
-  State<Nivel2Screen> createState() => _Nivel2ScreenState();
-}
-
-class _Nivel2ScreenState extends State<Nivel2Screen> {
-  late Nivel2Controller _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Nivel2Controller(nivelInicial: widget.nivelInicial);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   Color _getShadowColor(Color color) {
     return Color.fromARGB(
-      color.alpha,
-      (color.red * 0.7).round(),
-      (color.green * 0.7).round(),
-      (color.blue * 0.7).round(),
-    );
-  }
-
-  void _validar(Color elegida) {
-    _controller.validarColor(
-      elegida,
-      onResult: (correcto) {
-        if (correcto) {
-          UserController().completarNivel(widget.nivelInicial);
-          GameBottomSheet.mostrarVictoria(
-            context: context,
-            pigmentosGanados: 30,
-            onContinuar: () {
-              Navigator.pop(context);
-            },
-          );
-        } else {
-          UserController().restarVida();
-          final livesLeft = UserController().currentUser.lives;
-          GameBottomSheet.mostrarDerrota(
-            context: context,
-            mensaje: livesLeft <= 0
-                ? "Te has quedado sin vidas. ¡Repón tus vidas en el mapa para seguir!"
-                : "Ese color no cumple el mensaje del brief estratégico. ¡Prueba de nuevo!",
-            onReintentar: () {
-              if (livesLeft <= 0) {
-                Navigator.pop(context);
-              } else {
-                setState(() {
-                  _controller = Nivel2Controller(nivelInicial: widget.nivelInicial);
-                });
-              }
-            },
-            onVolver: () {
-              Navigator.pop(context);
-            },
-          );
-        }
-      },
+      (color.a * 255.0).round().clamp(0, 255),
+      (color.r * 255.0 * 0.7).round().clamp(0, 255),
+      (color.g * 255.0 * 0.7).round().clamp(0, 255),
+      (color.b * 255.0 * 0.7).round().clamp(0, 255),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ancho = MediaQuery.of(context).size.width;
-    int crossAxis = ancho > 600 ? 4 : 2;
-    final datosNivel = _controller.datosNivel;
+    final double ancho = MediaQuery.of(context).size.width;
+    final int crossAxis = ancho > 600 ? 4 : 2;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E2638), // Fondo oscuro sólido
-      appBar: AppBar(
-        title: Text('Branding - Nivel ${datosNivel.level}'),
-        backgroundColor: const Color(0xFF141824),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+    return BaseGameplayScreen<SearchLevelModel, Nivel2Controller>(
+      nivel: nivelInicial,
+      controllerFactory: (context) => Nivel2Controller(nivelInicial: nivelInicial),
+      instructionCardBuilder: (context, controller) {
+        final datos = controller.datosNivel;
+        return Container(
+          padding: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C3545),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF3F4B62), width: 2),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Panel del Brief estratégico
-              Container(
-                padding: const EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2C3545),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFF3F4B62), width: 2),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      datosNivel.context.toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFFFF9F1C),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      datosNivel.brief,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              const Text(
-                "Selecciona el color corporativo correcto:",
+              Text(
+                datos.context.toUpperCase(),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              // Opciones de marca como botones 3D
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxis,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.15,
+                style: const TextStyle(
+                  color: Color(0xFFFF9F1C),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  letterSpacing: 1.0,
                 ),
-                itemCount: _controller.opciones.length,
-                itemBuilder: (context, index) {
-                  final item = _controller.opciones[index];
-                  final Color itemColor = item["color"];
+              ),
+              const SizedBox(height: 10),
+              Text(
+                datos.instruction, // mapped to brief
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      gameFieldBuilder: (context, controller) {
+        return Column(
+          children: [
+            const Text(
+              "Selecciona el color corporativo correcto:",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxis,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.15,
+              ),
+              itemCount: controller.opciones.length,
+              itemBuilder: (context, index) {
+                final item = controller.opciones[index];
+                final Color itemColor = item["color"];
+                final bool seleccionado = controller.colorSeleccionado == itemColor;
 
-                  return GameButton(
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: seleccionado ? const Color(0xFFFF9F1C) : Colors.transparent,
+                      width: 3.5,
+                    ),
+                  ),
+                  child: GameButton(
                     backgroundColor: itemColor,
                     shadowColor: _getShadowColor(itemColor),
                     borderRadius: 20,
-                    onTap: () => _validar(itemColor),
+                    onTap: () => controller.seleccionarColor(itemColor),
                     child: Container(
                       alignment: Alignment.bottomCenter,
                       padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),
@@ -175,13 +119,13 @@ class _Nivel2ScreenState extends State<Nivel2Screen> {
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

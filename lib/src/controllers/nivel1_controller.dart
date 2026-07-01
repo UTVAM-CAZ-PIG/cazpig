@@ -1,30 +1,42 @@
 import 'package:flutter/material.dart';
 import '../models/level_model.dart';
+import 'base_level_controller.dart';
 import 'level_generator.dart';
 
-class Nivel1Controller extends ChangeNotifier {
-  final int nivelInicial;
+class Nivel1Controller extends BaseLevelController<MixLevelModel> {
   Color? colorSeleccionado1;
   Color? colorSeleccionado2;
 
-  late MixLevelModel datosNivel;
-
-  Nivel1Controller({required this.nivelInicial}) {
+  Nivel1Controller({required super.nivelInicial}) {
     datosNivel = LevelGenerator.generarNivel(nivelInicial) as MixLevelModel;
   }
 
-  void seleccionarColor(Color color, {required Function(bool) onResult}) {
+  @override
+  bool get listoParaComprobar => colorSeleccionado1 != null && colorSeleccionado2 != null;
+
+  void seleccionarColor(Color color) {
+    if (comprobado) return;
     if (colorSeleccionado1 == null) {
       colorSeleccionado1 = color;
-      notifyListeners();
-    } else if (colorSeleccionado2 == null) {
-      colorSeleccionado2 = color;
-      notifyListeners();
-      _verificarMezcla(onResult);
+    } else {
+      colorSeleccionado2 ??= color;
     }
+    notifyListeners();
   }
 
-  void _verificarMezcla(Function(bool) onResult) {
+  @override
+  void reiniciarSeleccion() {
+    if (comprobado) return;
+    colorSeleccionado1 = null;
+    colorSeleccionado2 = null;
+    notifyListeners();
+  }
+
+  @override
+  bool comprobarResultado() {
+    if (!listoParaComprobar) return false;
+    comprobado = true;
+    
     Color c1 = datosNivel.color1;
     Color c2 = datosNivel.color2;
 
@@ -34,12 +46,12 @@ class Nivel1Controller extends ChangeNotifier {
             (colorSeleccionado1?.value == c2.value &&
                 colorSeleccionado2?.value == c1.value);
 
-    onResult(correcto);
-
     if (!correcto) {
       colorSeleccionado1 = null;
       colorSeleccionado2 = null;
-      notifyListeners();
+      comprobado = false;
     }
+    notifyListeners();
+    return correcto;
   }
 }

@@ -5,6 +5,7 @@ import '../widgets/game_button.dart';
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
+import 'gameplay/nivel4_screen.dart';
 
 class NivelSeleccionScreen extends StatefulWidget {
   const NivelSeleccionScreen({super.key});
@@ -296,14 +297,16 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     }
 
     Widget pantallaDestino;
-    int tipo = nivel % 3;
+    int tipo = nivel % 4;
 
     if (tipo == 1) {
       pantallaDestino = Nivel1Screen(nivelInicial: nivel);
     } else if (tipo == 2) {
       pantallaDestino = Nivel2Screen(nivelInicial: nivel);
-    } else {
+    } else if (tipo == 3) {
       pantallaDestino = Nivel3Screen(nivelInicial: nivel);
+    } else {
+      pantallaDestino = Nivel4Screen(nivelInicial: nivel);
     }
 
     Navigator.push(

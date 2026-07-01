@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../../controllers/splash_controller.dart';
 import '../../controllers/user_controller.dart';
 import '../../theme/app_theme.dart';
@@ -62,44 +63,71 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.fondoPastel,
-        ),
+      backgroundColor: const Color(0xFF191D2B), // Fondo oscuro de juego unificado
+      body: SafeArea(
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             int porcentaje = (_controller.progreso * 100).toInt();
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/imagenes/icon1.png', 
-                      width: 600, 
-                      height: 600,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Título del Juego con brillo de neón degradado
+                    ShaderMask(
+                      shaderCallback: (bounds) => AppTheme.degradadoGlow.createShader(bounds),
+                      child: const Text(
+                        "CAZADORES DE PIGMENTOS",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Spinner Lottie interactivo central
+                    Lottie.asset(
+                      'assets/spinners/spinner.json',
+                      width: 160,
+                      height: 160,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.broken_image, size: 100, color: Colors.white54);
+                        return const CircularProgressIndicator(color: Color(0xFF00C897));
                       },
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  const CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Cargando... $porcentaje%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 48),
+
+                    // Mensaje de carga interactivo
+                    Text(
+                      _controller.mensaje,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+
+                    // Porcentaje en color neón
+                    Text(
+                      '$porcentaje%',
+                      style: const TextStyle(
+                        color: Color(0xFFFF9F1C),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },

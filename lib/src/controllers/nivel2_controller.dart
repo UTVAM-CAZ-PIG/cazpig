@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import '../models/level_model.dart';
+import 'base_level_controller.dart';
 import 'level_generator.dart';
 
-class Nivel2Controller extends ChangeNotifier {
-  final int nivelInicial;
-
-  late SearchLevelModel datosNivel;
+class Nivel2Controller extends BaseLevelController<SearchLevelModel> {
   late List<Map<String, dynamic>> opciones;
+  Color? colorSeleccionado;
 
-  Nivel2Controller({required this.nivelInicial}) {
+  Nivel2Controller({required super.nivelInicial}) {
     datosNivel = LevelGenerator.generarNivel(nivelInicial) as SearchLevelModel;
     
     final HSLColor correctHsl = HSLColor.fromColor(datosNivel.correctColor);
     
-    // A mayor nivel, los distractores tienen un tono más parecido al correcto (mayor dificultad)
     double shift = (40.0 - nivelInicial * 0.4).clamp(8.0, 45.0);
     
     final Color d1 = correctHsl.withHue((correctHsl.hue + shift) % 360).toColor();
@@ -30,8 +28,28 @@ class Nivel2Controller extends ChangeNotifier {
     ]..shuffle();
   }
 
-  void validarColor(Color color, {required Function(bool) onResult}) {
-    bool correcto = color.value == datosNivel.correctColor.value;
-    onResult(correcto);
+  @override
+  bool get listoParaComprobar => colorSeleccionado != null;
+
+  void seleccionarColor(Color color) {
+    if (comprobado) return;
+    colorSeleccionado = color;
+    notifyListeners();
+  }
+
+  @override
+  void reiniciarSeleccion() {
+    if (comprobado) return;
+    colorSeleccionado = null;
+    notifyListeners();
+  }
+
+  @override
+  bool comprobarResultado() {
+    if (!listoParaComprobar) return false;
+    comprobado = true;
+    bool correcto = colorSeleccionado!.value == datosNivel.correctColor.value;
+    notifyListeners();
+    return correcto;
   }
 }

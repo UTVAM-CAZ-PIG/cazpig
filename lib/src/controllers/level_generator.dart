@@ -52,13 +52,77 @@ class LevelGenerator {
     [const Color(0xFFFFF3E0), const Color(0xFFFFB74D)], // Naranja
   ];
 
+  // Catálogo de contrastes de accesibilidad WCAG
+  static final List<Map<String, dynamic>> _contrastesBase = [
+    {
+      "question": "Selecciona el color con MEJOR LEGIBILIDAD sobre este fondo amarillo vibrante:",
+      "bg": const Color(0xFFFFD166),
+      "correct": const Color(0xFF1D2434),
+      "options": [
+        const Color(0xFFFFFFFF),
+        const Color(0xFFECEFF1),
+        const Color(0xFF1D2434),
+        const Color(0xFFA5D6A7),
+      ],
+      "explanation": "El fondo amarillo es muy claro. Necesitas un color muy oscuro (alta relación de contraste) para que el texto sea legible y no canse la vista."
+    },
+    {
+      "question": "Elige el texto de máxima legibilidad sobre este fondo azul marino profundo:",
+      "bg": const Color(0xFF1A237E),
+      "correct": const Color(0xFFFFFFFF),
+      "options": [
+        const Color(0xFF3F51B5),
+        const Color(0xFF212121),
+        const Color(0xFFFFFFFF),
+        const Color(0xFF4E586E),
+      ],
+      "explanation": "Los fondos oscuros requieren texto blanco o de tonalidades sumamente claras para cumplir con los estándares de accesibilidad WCAG."
+    },
+    {
+      "question": "Selecciona el color de texto ideal para este fondo verde neón muy brillante:",
+      "bg": const Color(0xFFCCFF00),
+      "correct": const Color(0xFF000000),
+      "options": [
+        const Color(0xFF000000),
+        const Color(0xFFFFFFFF),
+        const Color(0xFF81C784),
+        const Color(0xFFFFF59D),
+      ],
+      "explanation": "El verde neón tiene una luminancia muy alta, por lo que el negro puro ofrece la mejor legibilidad y previene la fatiga visual."
+    },
+    {
+      "question": "Selecciona el texto más legible sobre este fondo rojo saturado de marca:",
+      "bg": const Color(0xFFD50000),
+      "correct": const Color(0xFFFFFFFF),
+      "options": [
+        const Color(0xFFE57373),
+        const Color(0xFFFFFFFF),
+        const Color(0xFF795548),
+        const Color(0xFF263238),
+      ],
+      "explanation": "Sobre fondos rojos sumamente saturados, el texto blanco limpio destaca con máxima nitidez e inmediatez de lectura."
+    },
+    {
+      "question": "Selecciona el color de texto óptimo para este fondo gris claro minimalista:",
+      "bg": const Color(0xFFECEFF1),
+      "correct": const Color(0xFF263238),
+      "options": [
+        const Color(0xFFFFFFFF),
+        const Color(0xFF90A4AE),
+        const Color(0xFF263238),
+        const Color(0xFFB0BEC5),
+      ],
+      "explanation": "Para un fondo gris claro, el color del texto debe tener una luminancia muy baja, como el gris grafito oscuro o negro."
+    },
+  ];
+
   /// Obtiene la configuración de un nivel según el número N
   static dynamic generarNivel(int nivel) {
-    int tipo = nivel % 3;
+    int tipo = nivel % 4; // Rotamos entre 4 tipos de niveles
 
     if (tipo == 1) {
       // Mezclas
-      int idx = (nivel ~/ 3) % _mezclasBase.length;
+      int idx = (nivel ~/ 4) % _mezclasBase.length;
       final base = _mezclasBase[idx];
       return MixLevelModel(
         level: nivel,
@@ -70,21 +134,20 @@ class LevelGenerator {
       );
     } else if (tipo == 2) {
       // Buscar / Branding
-      int idx = (nivel ~/ 3) % _briefsBase.length;
+      int idx = (nivel ~/ 4) % _briefsBase.length;
       final base = _briefsBase[idx];
       return SearchLevelModel(
         level: nivel,
+        instruction: base["brief"],
         context: base["context"],
-        brief: base["brief"],
         correctColor: base["correct"],
         colorName: base["name"],
       );
-    } else {
-      // Degradados (tipo == 0)
-      int idx = (nivel ~/ 3) % _parejasDegradados.length;
+    } else if (tipo == 3) {
+      // Degradados
+      int idx = (nivel ~/ 4) % _parejasDegradados.length;
       final coloresExtremos = _parejasDegradados[idx];
 
-      // El tamaño de la secuencia aumenta a niveles superiores
       int largoSecuencia = 4;
       if (nivel > 15) largoSecuencia = 5;
       if (nivel > 30) largoSecuencia = 6;
@@ -96,9 +159,6 @@ class LevelGenerator {
         secuenciaCompleta.add(colorPaso);
       }
 
-      // Ocultar un nodo del medio
-      // Si largo es 4, los índices del medio son 1, 2
-      // Si largo es 5, del medio son 1, 2, 3
       int blankIndex = 1;
       if (largoSecuencia > 4) {
         blankIndex = 1 + (nivel % (largoSecuencia - 2));
@@ -106,7 +166,6 @@ class LevelGenerator {
 
       Color colorCorrecto = secuenciaCompleta[blankIndex];
 
-      // Reemplazar el color correcto por transparente en la secuencia
       List<Color> secuenciaConVacio = List.from(secuenciaCompleta);
       secuenciaConVacio[blankIndex] = Colors.transparent;
 
@@ -115,6 +174,18 @@ class LevelGenerator {
         sequence: secuenciaConVacio,
         correctColor: colorCorrecto,
         colorName: "Paso de color intermedio",
+      );
+    } else {
+      // Contraste Cromático / Legibilidad (tipo == 0)
+      int idx = (nivel ~/ 4) % _contrastesBase.length;
+      final base = _contrastesBase[idx];
+      return ContrastLevelModel(
+        level: nivel,
+        instruction: base["question"],
+        backgroundColor: base["bg"],
+        correctTextColor: base["correct"],
+        options: List<Color>.from(base["options"]),
+        explanation: base["explanation"],
       );
     }
   }
