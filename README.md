@@ -33,6 +33,7 @@ Para correr la app en el dispositivo/emulador conectado:
 
 ```bash
 flutter run
+flutter run -d web-server     
 ```
 
 Opciones útiles:
