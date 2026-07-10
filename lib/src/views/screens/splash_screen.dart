@@ -1,9 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import '../../controllers/splash_controller.dart';
 import '../../controllers/user_controller.dart';
 import '../../theme/app_theme.dart';
-import 'registro_screen.dart';
+import 'login_screen.dart';
 import 'menu_principal_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -29,24 +30,25 @@ class _SplashScreenState extends State<SplashScreen> {
 
       _controller.iniciarSimulacionDeCarga(
         onComplete: () {
-          final user = UserController().currentUser;
-          // Si el correo no es el por defecto (invitado), significa que ya se registró anteriormente
-          final bool yaRegistrado = user.email != "invitado@correo.com";
+          final firebaseUser = FirebaseAuth.instance.currentUser;
 
-          if (yaRegistrado) {
+          if (firebaseUser != null) {
+            // Sesión activa: ir al menú principal
+            final user = UserController().currentUser;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => MenuPrincipalScreen(
-                  correo: user.email,
+                  correo: firebaseUser.email ?? user.email,
                   edad: user.age,
                 ),
               ),
             );
           } else {
+            // Sin sesión: ir a login
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const RegistroScreen()),
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
             );
           }
         },

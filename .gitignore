@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Carpetas auto-generadas por Flutter en cada build (no commitear)
+**/flutter/ephemeral/
+
 # Symbolication related
 app.*.symbols
 
