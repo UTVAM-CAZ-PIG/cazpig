@@ -69,8 +69,8 @@ flutter:
     - assets/imagenes/icon1.png
     - assets/imagenes/icon2.png
     - assets/spinners/spinner.json
-    - assets/audio/
-
+    - assets/spinners/bool.json 
+    - assets/avatar/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

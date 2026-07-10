@@ -12,6 +12,7 @@ class PerfilScreen extends StatelessWidget {
     this.edad,
   });
 
+
   @override
   Widget build(BuildContext context) {
     final userController = UserController();
@@ -21,93 +22,152 @@ class PerfilScreen extends StatelessWidget {
       builder: (context, child) {
         final user = userController.currentUser;
 
-        return SingleChildScrollView(
+        
+        final Map<String, Color> avatarBorderColors = {
+          "assets/avatar/avatar1.jpeg": Colors.deepOrange.shade300,
+          "assets/avatar/avatar2.jpeg": Colors.blue.shade400,
+          "assets/avatar/avatar3.jpeg": Colors.blueGrey.shade300,
+          "assets/avatar/avatar4.jpeg": Colors.green.shade600,
+          "assets/avatar/avatar5.jpeg": Colors.brown.shade400,
+          "assets/avatar/avatar6.jpeg": Colors.purple.shade400,
+        };
+        final Color avatarColor = avatarBorderColors[user.avatarUrl] ?? Colors.deepOrange.shade300;
+
+        
+        Color levelColor;
+        if (user.level < 20) {
+          levelColor = Colors.brown.shade400; // Novato
+        } else if (user.level < 50) {
+          levelColor = Colors.blue.shade400; // Intermedio
+        } else if (user.level < 100) {
+          levelColor = Colors.deepOrange.shade300; // Experto
+        } else {
+          levelColor = Colors.purple.shade400; // Maestro
+        }
+
+        return Stack(
+          children:[
+            Positioned.fill(
+              child: Container(
+                color: const Color.fromARGB(255, 18, 17, 17), 
+                child: CustomPaint(
+                  painter:FondoLiquidoPainter(),
+                  ),
+                  ) ,
+                  ),
+          
+
+        SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Column(
               children: [
                 const SizedBox(height: 10),
-                
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.deepOrange.shade300.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C3545).withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 55,
-                    backgroundColor: Colors.deepOrange.shade300,
-                    child: CircleAvatar(
-                      radius: 51,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person_rounded, size: 65, color: Colors.deepOrange.shade300),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _mostrarGaleriaAvatares(context, userController),
+                                child: CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor: avatarColor,
+                                  child: CircleAvatar(
+                                    radius: 37,
+                                    backgroundColor: Colors.white,
+                                    backgroundImage: AssetImage(user.avatarUrl),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user.name,
+                                      style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color.fromARGB(221, 255, 255, 255)),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      user.title,
+                                      style: TextStyle(
+                                          color: Colors.grey.shade400, fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          // XP en el medio
+                          Column(
+                            children: [
+                              Text('${user.xp} XP',
+                                  style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                              const SizedBox(height: 4),
+                              Text('Puntos Totales',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade400, fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                const Text(
-                  'Elena Cruz', 
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                
-                Text(
-                  user.email,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                    Positioned(
+                      top: -10,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: levelColor,
+                          boxShadow: [
+                            BoxShadow(
+                              color: levelColor.withOpacity(0.5),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Text('Nvl ${user.level}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
-
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        children: [
-                          const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 36),
-                          const SizedBox(height: 6),
-                          Text('${user.xp} XP', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('Puntos Totales', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                        ],
-                      ),
-                      Container(width: 1, height: 40, color: Colors.grey.shade200),
-                      Column(
-                        children: [
-                          Icon(Icons.workspace_premium_rounded, color: Colors.deepOrange.shade300, size: 36),
-                          const SizedBox(height: 6),
-                          Text('Nivel ${user.level}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text(user.title, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
                 Row(
                   children: [
                     ShaderMask(
-                      shaderCallback: (bounds) => AppTheme.degradadoGlow.createShader(bounds),
+                      shaderCallback: (bounds) =>
+                          AppTheme.degradadoGlow.createShader(bounds),
                       child: const Text(
                         "Logros Desbloqueados",
-                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -121,47 +181,253 @@ class PerfilScreen extends StatelessWidget {
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   children: [
-                    _buildBadge(Icons.brush_rounded, user.badges.contains("Primer Trazo") ? "Primer Trazo" : "Bloqueado", Colors.green.shade400),
-                    _buildBadge(Icons.local_fire_department_rounded, user.badges.contains("Racha Color") ? "Racha Color" : "Bloqueado", Colors.orange.shade400),
-                    _buildBadge(Icons.auto_awesome_rounded, user.badges.contains("Ojo Mágico") ? "Ojo Mágico" : "Bloqueado", Colors.purple.shade400),
-                  ],
+            _buildBadge(
+              icon: Icons.brush_rounded,
+              title: "Primer Trazo",
+              color: Colors.green.shade400,
+              isUnlocked: user.badges.contains("Primer Trazo"),
+            ),
+            _buildBadge(
+              icon: Icons.local_fire_department_rounded,
+              title: "Racha Color",
+              color: Colors.orange.shade400,
+              isUnlocked: user.badges.contains("Racha Color"),
+            ),
+            _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Estudiante Estrella",
+              color: Colors.purple.shade700,
+              isUnlocked: user.badges.contains("Estudiante Estrella"),
+            ),
+            _buildBadge(
+              icon: Icons.shield_rounded,
+              title: "Sin Mancharse",
+              color: Colors.blue.shade400,
+              isUnlocked: user.badges.contains("Sin Mancharse"),
+            ),
+             _buildBadge(
+              icon: Icons.visibility_rounded,
+              title: "Ojo Entrenado",
+              color: Colors.teal.shade400,
+              isUnlocked: user.badges.contains("Ojo Entrenado"),
+            ),
+            _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Ojo Mágico",
+              color: Colors.purple.shade700,
+              isUnlocked: user.badges.contains("Ojo Mágico"),
+            ),
+             _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Cazador Definitivo",
+              color: Colors.blue.shade700,
+              isUnlocked: user.badges.contains("Cazador Definitivo"),
+            ),
+             _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Velocidad luz",
+              color: Colors.purple.shade700,
+              isUnlocked: user.badges.contains("Velocidad luz"),
+            ),
+             _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "En la zona",
+              color: Colors.red.shade700,
+              isUnlocked: user.badges.contains("En la zona"),
+            ),
+             _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Prueba y error",
+              color: Colors.teal.shade700,
+              isUnlocked: user.badges.contains("Prueba y error"),
+            ),
+             _buildBadge(
+              icon: Icons.auto_awesome_rounded,
+              title: "Linea Recta",
+              color: Colors.yellow.shade700,
+              isUnlocked: user.badges.contains("Linea Recta"),
+            ),
+            
+          ],
                 ),
               ],
             ),
           ),
+        ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildBadge(IconData icon, String title, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+
+  Widget _buildBadge({
+  required IconData icon,
+  required String title,
+  required Color color,
+  required bool isUnlocked,
+}) {
+  // Configuración de colores estilo Flat Design
+  final Color backgroundColor = isUnlocked ? color.withOpacity(0.15) : const Color(0xFF2C3545).withOpacity(0.5);
+  final Color iconColor = isUnlocked ? color : Colors.grey.shade600;
+  final Color textColor = isUnlocked ? Colors.white.withOpacity(0.9) : Colors.grey.shade500;
+
+  return Container(
+    decoration: BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(20),
+      // Muestra sombra solo si está desbloqueado
+      boxShadow: isUnlocked 
+          ? [
+              BoxShadow(
+                color: color.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : null, 
+      // Borde sutil para ambos estados
+      border: Border.all(
+        color: isUnlocked ? color.withOpacity(0.3) : Colors.grey.shade800,
+        width: 2,
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 36, color: color),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          isUnlocked ? icon : Icons.lock_outline_rounded, // Candado si está bloqueado
+          size: 36,
+          color: iconColor,
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
+}
+  
+void _mostrarGaleriaAvatares(BuildContext context, UserController controller) {
+  // Lista de los avatares que tienes en tus assets
+  final List<String> avataresDisponibles = [
+    "assets/avatar/avatar1.jpeg",
+    "assets/avatar/avatar2.jpeg",
+    "assets/avatar/avatar3.jpeg",
+    "assets/avatar/avatar4.jpeg",
+    "assets/avatar/avatar5.jpeg",
+    "assets/avatar/avatar6.jpeg",
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Selecciona tu Avatar",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: avataresDisponibles.length,
+              itemBuilder: (context, index) {
+                final avatar = avataresDisponibles[index];
+                return GestureDetector(
+                  onTap: () async {
+                    // 1. Llamamos a la lógica del controlador para guardar el cambio
+                    await controller.actualizarPerfil(
+                      nuevoNombre: controller.currentUser.name, 
+                      nuevoAvatar: avatar,
+                    );
+                    // 2. Cerramos el modal
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: CircleAvatar(
+                    backgroundImage: AssetImage(avatar),
+                    backgroundColor: Colors.grey.shade100,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+}
+
+ 
+
+class FondoLiquidoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+  
+    void dibujarParticula(double x, double y, double radio, Color color, [double glowSpread = 3.0]) {
+      
+      final paintGlow = Paint()
+        ..color = color.withOpacity(0.4) // Brillo sutil
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowSpread);
+      
+      final paintCore = Paint()..color = color.withOpacity(0.9);
+      
+      // Dibujamos el brillo y luego el núcleo encima
+      canvas.drawCircle(Offset(x, y), radio + glowSpread, paintGlow);
+      canvas.drawCircle(Offset(x, y), radio, paintCore);
+    }
+
+    dibujarParticula(size.width * 0.15, size.height * 0.10, 4.0, Colors.cyanAccent);
+    dibujarParticula(size.width * 0.85, size.height * 0.25, 2.5, Colors.cyan);
+    dibujarParticula(size.width * 0.50, size.height * 0.90, 3.5, Colors.cyanAccent);
+    dibujarParticula(size.width * 0.10, size.height * 0.60, 2.0, const Color(0xFF00C8D2));
+
+    dibujarParticula(size.width * 0.75, size.height * 0.70, 5.0, Colors.amber, 8.0); // Una gota más grande y brillante
+    dibujarParticula(size.width * 0.35, size.height * 0.40, 2.0, Colors.amberAccent);
+    dibujarParticula(size.width * 0.90, size.height * 0.85, 3.0, Colors.orangeAccent);
+    dibujarParticula(size.width * 0.45, size.height * 0.15, 2.0, Colors.amber);
+
+    dibujarParticula(size.width * 0.20, size.height * 0.80, 4.5, Colors.pinkAccent);
+    dibujarParticula(size.width * 0.80, size.height * 0.15, 3.0, const Color(0xFFD63384));
+    dibujarParticula(size.width * 0.65, size.height * 0.55, 2.5, Colors.pink);
+    dibujarParticula(size.width * 0.30, size.height * 0.90, 1.5, Colors.pinkAccent);
+
+    dibujarParticula(size.width * 0.55, size.height * 0.30, 4.0, Colors.deepPurpleAccent);
+    dibujarParticula(size.width * 0.05, size.height * 0.35, 3.0, Colors.purpleAccent);
+    dibujarParticula(size.width * 0.70, size.height * 0.95, 2.0, Colors.purple);
+
+    dibujarParticula(size.width * 0.40, size.height * 0.75, 1.0, Colors.white, 2.0);
+    dibujarParticula(size.width * 0.60, size.height * 0.10, 1.0, Colors.white70, 2.0);
+    dibujarParticula(size.width * 0.25, size.height * 0.25, 1.2, Colors.white60, 2.0);
+    dibujarParticula(size.width * 0.85, size.height * 0.50, 1.0, Colors.white, 2.0);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false; 
   }
 }
