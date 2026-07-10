@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -9,30 +10,50 @@ class SoundManager {
 
   SoundManager._internal();
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  // Un player dedicado por sonido evita conflictos de estado en Chrome
+  final AudioPlayer _successPlayer = AudioPlayer();
+  final AudioPlayer _errorPlayer = AudioPlayer();
+  final AudioPlayer _tapPlayer = AudioPlayer();
 
   Future<void> playSuccess() async {
-    await _playAudio('audio/success.mp3');
+    await _playAudio(_successPlayer, 'audio/success.mp3');
   }
 
   Future<void> playError() async {
-    await _playAudio('audio/error.mp3');
+    await _playAudio(_errorPlayer, 'audio/error.mp3');
   }
 
   Future<void> playButtonTap() async {
     await _vibrate();
-    await _playAudio('audio/button_tap.mp3');
+    await _playAudio(_tapPlayer, 'audio/button_tap.mp3');
   }
 
-  Future<void> _playAudio(String assetPath) async {
+  /// En web, AssetSource no resuelve el MIME type correctamente y Chrome
+  /// rechaza el audio con "Format error (Code: 4)".
+  /// UrlSource con la ruta de assets de Flutter sí funciona en web.
+  Source _buildSource(String assetPath) {
+    if (kIsWeb) {
+      // Flutter web sirve los assets en 'assets/<ruta>'
+      return UrlSource('assets/$assetPath');
+    }
+    return AssetSource(assetPath);
+  }
+
+  Future<void> _playAudio(AudioPlayer player, String assetPath) async {
     try {
-      await _audioPlayer.play(AssetSource(assetPath), volume: 1.0);
+      await player.stop();
+      await player.play(_buildSource(assetPath), volume: 1.0);
     } catch (error) {
       debugPrint('SoundManager: no se pudo reproducir $assetPath => $error');
     }
   }
 
   Future<void> _vibrate() async {
+    // La vibración no está disponible en web
+    if (kIsWeb) {
+      await HapticFeedback.selectionClick();
+      return;
+    }
     try {
       final hasVibrator = await Vibration.hasVibrator() ?? false;
       if (hasVibrator) {
@@ -49,5 +70,11 @@ class SoundManager {
       debugPrint('SoundManager: vibración no disponible => $error');
       await HapticFeedback.selectionClick();
     }
+  }
+
+  void dispose() {
+    _successPlayer.dispose();
+    _errorPlayer.dispose();
+    _tapPlayer.dispose();
   }
 }

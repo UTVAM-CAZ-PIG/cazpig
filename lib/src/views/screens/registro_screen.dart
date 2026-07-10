@@ -1,10 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/registro_controller.dart';
 import '../../controllers/user_controller.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/game_button.dart';
+import 'login_screen.dart';
 import 'menu_principal_screen.dart';
 
 class RegistroScreen extends StatefulWidget {
@@ -22,6 +23,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
   bool _isOffline = false;
   bool _isLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   void dispose() {
@@ -33,22 +36,18 @@ class _RegistroScreenState extends State<RegistroScreen> {
 
   Future<void> _intentarRegistro() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
-
     try {
-      final userCredential = await _authService.registerWithEmailAndPassword(
+      await _authService.registerWithEmailAndPassword(
         email: _controller.emailController.text,
         password: _passwordController.text,
       );
-
       final user = _controller.registrarUsuario();
       UserController().inicializarUsuario(
         email: user.email,
         age: user.age,
         isOffline: _isOffline,
       );
-
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -100,7 +99,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                 children: [
                   ShaderMask(
                     shaderCallback: (bounds) => AppTheme.degradadoGlow.createShader(bounds),
-                    child: Text(
+                    child: const Text(
                       "Registro de Jugador",
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -111,7 +110,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   Container(
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
@@ -125,15 +123,17 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         const Icon(Icons.palette_outlined, size: 50, color: Colors.cyanAccent),
                         const SizedBox(height: 24),
 
+                        // Correo
                         TextFormField(
                           controller: _controller.emailController,
                           keyboardType: TextInputType.emailAddress,
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                          decoration: _inputDecoration('Correo Electrónico', Icons.email_outlined),
+                          decoration: _inputDecoration('Correo Electronico', Icons.email_outlined),
                           validator: _controller.validarEmail,
                         ),
                         const SizedBox(height: 20),
 
+                        // Edad
                         TextFormField(
                           controller: _controller.edadController,
                           keyboardType: TextInputType.number,
@@ -143,6 +143,51 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         ),
                         const SizedBox(height: 20),
 
+                        // Contrasena
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: !_showPassword,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                          decoration: _inputDecoration('Contrasena', Icons.lock_outline).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: Colors.cyanAccent.withOpacity(0.7),
+                              ),
+                              onPressed: () => setState(() => _showPassword = !_showPassword),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Ingresa una contrasena';
+                            if (value.length < 6) return 'Minimo 6 caracteres';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Confirmar contrasena
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: !_showConfirmPassword,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                          decoration: _inputDecoration('Confirmar contrasena', Icons.lock_outline).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: Colors.cyanAccent.withOpacity(0.7),
+                              ),
+                              onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Confirma tu contrasena';
+                            if (value != _passwordController.text) return 'Las contrasenas no coinciden';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Modo Offline
                         SwitchListTile(
                           title: const Text(
                             'Modo Offline',
@@ -154,9 +199,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                           ),
                           secondary: const Icon(Icons.cloud_off_rounded, color: Colors.cyanAccent),
                           value: _isOffline,
-                          onChanged: (bool value) {
-                            setState(() => _isOffline = value);
-                          },
+                          onChanged: (bool value) => setState(() => _isOffline = value),
                         ),
                         const SizedBox(height: 30),
 
@@ -171,12 +214,40 @@ class _RegistroScreenState extends State<RegistroScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Text(
-                                  '¡Comenzar Aventura!', 
+                                  'Comenzar Aventura!',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Link a Login
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Ya tienes cuenta? ',
+                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        ),
+                        child: const Text(
+                          'Iniciar sesion',
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.cyanAccent,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
