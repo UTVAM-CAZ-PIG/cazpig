@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "189818621892",
+    "project_id": "pigmento-4fa57",
+    "storage_bucket": "pigmento-4fa57.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189818621892:android:85e4371b4b75287b0a9e91",
+        "android_client_info": {
+          "package_name": "com.example.pigmento"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdYDo1x9wvvB69upGYLkO3_15ya7xdnZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+// 1. IMPORTANTE: Importamos el servicio de la base de datos
+import '../services/database_service.dart';
 
 class UserController extends ChangeNotifier {
   static final UserController _instance = UserController._internal();
@@ -8,14 +10,37 @@ class UserController extends ChangeNotifier {
   UserController._internal();
 
   UserModel? _currentUser;
+  
+  // 2. Instanciamos el servicio de base de datos
+  final DatabaseService _dbService = DatabaseService();
 
   UserModel get currentUser => _currentUser ?? UserModel.initial(email: "invitado@correo.com", age: "0");
+
+  /// 3. MÉTODO AUXILIAR: Envía el estado actual a Firebase si no está offline
+  Future<void> _sincronizarConFirebase() async {
+    // Si el usuario es invitado, no tiene email real o está offline, no subimos nada
+    if (_currentUser == null || currentUser.email == "invitado@correo.com" || currentUser.isOffline) return;
+    
+    try {
+      // Usamos el email como identificador único para el documento en Firebase (limpiando caracteres especiales si es necesario)
+      final String docId = currentUser.email.replaceAll('.', '_');
+      
+      await _dbService.saveUserProfile(docId, currentUser);
+      print("¡Progreso de ${currentUser.email} sincronizado en Firebase!");
+    } catch (e) {
+      print("Error al sincronizar con Firebase: $e");
+    }
+  }
 
   /// Inicializa el usuario (después del login)
   void inicializarUsuario({required String email, required String age, required bool isOffline}) {
     _currentUser = UserModel.initial(email: email, age: age, isOffline: isOffline);
     _verificarRachaDiaria();
     guardarProgresoLocal();
+    
+    // 4. Sincronizamos con Firebase al iniciar sesión
+    _sincronizarConFirebase();
+    
     notifyListeners();
   }
 
@@ -80,7 +105,7 @@ class UserController extends ChangeNotifier {
   }
 
   /// Registra el fin de un nivel exitoso (+100 XP, +30 Pigmentos)
-  void completarNivel(int nivel) {
+  void completarNivel(int nivel) async {
     _currentUser ??= UserModel.initial(email: "invitado@correo.com", age: "0");
 
     int nuevaXp = currentUser.xp + 100;
@@ -105,7 +130,24 @@ class UserController extends ChangeNotifier {
       title: nuevoTitulo,
     );
 
-    guardarProgresoLocal();
+    await guardarProgresoLocal();
+    
+    // 5. Sincronizamos con Firebase al completar el nivel para actualizar XP y nivel
+    await _sincronizarConFirebase();
+    
+    // 6. Además guardamos el registro específico de esta partida en la subcolección
+    if (!currentUser.isOffline && currentUser.email != "invitado@correo.com") {
+      final String docId = currentUser.email.replaceAll('.', '_');
+      await _dbService.saveGameResult(
+        uid: docId,
+        nivel: nivel,
+        completado: true,
+        aciertos: 5, // Puedes cambiarlo por variables dinámicas si tu vista las provee
+        errores: 0,
+        pigmentosGanados: 30,
+      );
+    }
+
     notifyListeners();
   }
 
@@ -117,18 +159,19 @@ class UserController extends ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
       if (nuevasVidas == 4) {
-        // Iniciar marca de tiempo para regenerar vidas
         await prefs.setString("cazpig_last_life_loss", DateTime.now().toIso8601String());
       }
-      guardarProgresoLocal();
+      await guardarProgresoLocal();
+      _sincronizarConFirebase(); // Sincroniza la pérdida de vida
       notifyListeners();
     }
   }
 
   /// Restaura vidas al máximo
-  void recuperarVidas() {
+  void recuperarVidas() async {
     _currentUser = currentUser.copyWith(lives: 5);
-    guardarProgresoLocal();
+    await guardarProgresoLocal();
+    _sincronizarConFirebase();
     notifyListeners();
   }
 
@@ -139,14 +182,14 @@ class UserController extends ChangeNotifier {
         lives: 5,
         pigments: currentUser.pigments - 150,
       );
-      guardarProgresoLocal();
+      guardarProgresoLocal().then((_) => _sincronizarConFirebase());
       notifyListeners();
       return true;
     }
     return false;
   }
 
-  /// Calcula vidas a regenerar basándose en el tiempo transcurrido (5 mins por vida)
+  /// Calculates lives to regenerate based on elapsed time (5 mins per life)
   Future<void> _regenerarVidasPorTiempo() async {
     if (currentUser.lives >= 5) return;
     final prefs = await SharedPreferences.getInstance();
@@ -156,47 +199,43 @@ class UserController extends ChangeNotifier {
     final lastLoss = DateTime.parse(timeStr);
     final diff = DateTime.now().difference(lastLoss).inMinutes;
 
-    // 5 minutos por vida
     int vidasARecuperar = (diff / 5).floor();
     if (vidasARecuperar > 0) {
       int nuevasVidas = (currentUser.lives + vidasARecuperar).clamp(0, 5);
       _currentUser = currentUser.copyWith(lives: nuevasVidas);
       
       if (nuevasVidas < 5) {
-        // Actualizar marca con el remanente
         final remanenteMinutos = diff % 5;
         final nuevaMarca = DateTime.now().subtract(Duration(minutes: remanenteMinutos));
         await prefs.setString("cazpig_last_life_loss", nuevaMarca.toIso8601String());
       } else {
         await prefs.remove("cazpig_last_life_loss");
       }
-      guardarProgresoLocal();
+      await guardarProgresoLocal();
+      _sincronizarConFirebase();
     }
   }
 
-  /// Verifica y calcula las rachas consecutivas de juego diario
+  /// Verifica y calcula las rachas consecutivas de juego diario.
   Future<void> _verificarRachaDiaria() async {
     final prefs = await SharedPreferences.getInstance();
-    final lastPlayStr = prefs.getString("cazpig_last_play_date");
-    final today = DateTime.now();
-    final todayDateOnly = DateTime(today.year, today.month, today.day);
+    final lastLoginStr = prefs.getString("cazpig_last_login");
+    final now = DateTime.now();
 
-    if (lastPlayStr != null) {
-      final lastPlay = DateTime.parse(lastPlayStr);
-      final lastPlayDateOnly = DateTime(lastPlay.year, lastPlay.month, lastPlay.day);
-      final differenceInDays = todayDateOnly.difference(lastPlayDateOnly).inDays;
+    if (lastLoginStr != null) {
+      final lastLogin = DateTime.parse(lastLoginStr);
+      final differenceInHours = now.difference(lastLogin).inHours;
 
-      if (differenceInDays == 1) {
-        int nuevaRacha = currentUser.streak + 1;
-        _currentUser = currentUser.copyWith(streak: nuevaRacha);
-      } else if (differenceInDays > 1) {
-        _currentUser = currentUser.copyWith(streak: 1);
+      if (differenceInHours > 48) {
+        _currentUser = currentUser.copyWith(streak: 0);
+      } else if (differenceInHours >= 24) {
+        _currentUser = currentUser.copyWith(streak: currentUser.streak + 1);
       }
-    } else {
-      _currentUser = currentUser.copyWith(streak: 5); // 5 por defecto inicial
     }
-    await prefs.setString("cazpig_last_play_date", todayDateOnly.toIso8601String());
-    guardarProgresoLocal();
+
+    await prefs.setString("cazpig_last_login", now.toIso8601String());
+    await guardarProgresoLocal();
+    _sincronizarConFirebase();
   }
 
   Future<void> actualizarPerfil({required String nuevoNombre,required String nuevoAvatar})async{

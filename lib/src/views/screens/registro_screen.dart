@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/registro_controller.dart';
 import '../../controllers/user_controller.dart';
+import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/game_button.dart';
 import 'menu_principal_screen.dart';
@@ -15,22 +17,39 @@ class RegistroScreen extends StatefulWidget {
 class _RegistroScreenState extends State<RegistroScreen> {
   final _formKey = GlobalKey<FormState>();
   final _controller = RegistroController();
+  final AuthService _authService = AuthService();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   bool _isOffline = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _controller.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _intentarRegistro() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> _intentarRegistro() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userCredential = await _authService.registerWithEmailAndPassword(
+        email: _controller.emailController.text,
+        password: _passwordController.text,
+      );
+
       final user = _controller.registrarUsuario();
       UserController().inicializarUsuario(
         email: user.email,
         age: user.age,
         isOffline: _isOffline,
       );
+
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -38,8 +57,20 @@ class _RegistroScreenState extends State<RegistroScreen> {
             correo: user.email,
             edad: user.age,
           ),
-        ), 
+        ),
       );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_authService.getErrorMessage(e))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo completar el registro.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -132,11 +163,17 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         GameButton(
                           backgroundColor: const Color(0xFF58CC02),
                           shadowColor: const Color(0xFF46A302),
-                          onTap: _intentarRegistro,
-                          child: const Text(
-                            '¡Comenzar Aventura!', 
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
+                          onTap: _isLoading ? null : _intentarRegistro,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text(
+                                  '¡Comenzar Aventura!', 
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
                         ),
                       ],
                     ),
