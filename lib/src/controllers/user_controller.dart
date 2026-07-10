@@ -25,6 +25,8 @@ class UserController extends ChangeNotifier {
     if (prefs.containsKey("cazpig_email")) {
       final email = prefs.getString("cazpig_email") ?? "";
       final age = prefs.getString("cazpig_age") ?? "";
+      final name = prefs.getString("capig_name") ?? "Ele Cruz";
+      final avatarUrl = prefs.getString("cazpig_avatar") ?? "assets/avatar/avatar1.jpeg";
       final xp = prefs.getInt("cazpig_xp") ?? 1250;
       final level = prefs.getInt("cazpig_level") ?? 5;
       final currentLevelReached = prefs.getInt("cazpig_current_level") ?? 1;
@@ -38,6 +40,8 @@ class UserController extends ChangeNotifier {
       _currentUser = UserModel(
         email: email,
         age: age,
+        name:name,
+        avatarUrl:avatarUrl,
         xp: xp,
         level: level,
         currentLevelReached: currentLevelReached,
@@ -62,6 +66,8 @@ class UserController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("cazpig_email", currentUser.email);
     await prefs.setString("cazpig_age", currentUser.age);
+    await prefs.setString("cazpig_name", currentUser.name);
+    await prefs.setString("cazpig_avatar",currentUser.avatarUrl);
     await prefs.setInt("cazpig_xp", currentUser.xp);
     await prefs.setInt("cazpig_level", currentUser.level);
     await prefs.setInt("cazpig_current_level", currentUser.currentLevelReached);
@@ -191,5 +197,18 @@ class UserController extends ChangeNotifier {
     }
     await prefs.setString("cazpig_last_play_date", todayDateOnly.toIso8601String());
     guardarProgresoLocal();
+  }
+
+  Future<void> actualizarPerfil({required String nuevoNombre,required String nuevoAvatar})async{
+    if (_currentUser == null) return;
+
+    _currentUser = currentUser.copyWith(
+     name:nuevoNombre,
+     avatarUrl:nuevoAvatar,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("cazpig_name", nuevoNombre);
+    await prefs.setString("cazpig_avatar", nuevoAvatar);
+    notifyListeners();
   }
 }

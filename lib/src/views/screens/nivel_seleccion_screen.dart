@@ -40,10 +40,20 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       builder: (context, child) {
         final currentLevel = _userController.currentUser.currentLevelReached;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF191D2B), // Fondo oscuro de cielo estrellado
-          body: LayoutBuilder(
-            builder: (context, constraints) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                color: const Color.fromARGB(255, 18, 17, 17),
+                child: CustomPaint(
+                  painter: FondoLiquidoPainter(),
+                ),
+              ),
+            ),
+            Scaffold(
+              backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
+              body: LayoutBuilder(
+                builder: (context, constraints) {
               final double screenWidth = constraints.maxWidth;
 
               // Función que calcula la posición horizontal sinuosa de los nodos del mapa
@@ -88,6 +98,12 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                     levelShadow = const Color(0xFFD4AA3F);
                   }
 
+                  // Si está completado, color verde esmeralda brillante
+                  if (isCompleted && !isChest) {
+                    levelColor = const Color.fromARGB(255, 70, 149, 9);
+                    levelShadow = const Color.fromARGB(255, 48, 107, 6);
+                  }
+
                   // Si está bloqueado, color gris
                   if (isLocked) {
                     levelColor = const Color(0xFF4E586E);
@@ -98,7 +114,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                   final double nextX = getXOffset(levelNumber + 1);
 
                   return SizedBox(
-                    height: 140,
+                    height: 190, // Aumentamos la altura para dar más espacio
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -125,31 +141,62 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                             alignment: Alignment.center,
                             clipBehavior: Clip.none,
                             children: [
-                              // Botón de nivel o de Cofre
-                              GameButton(
-                                width: 70,
-                                height: 70,
-                                borderRadius: isChest ? 20 : 35, // Cofre cuadrado redondeado, nivel circular
-                                backgroundColor: levelColor,
-                                shadowColor: levelShadow,
-                                enabled: !isLocked,
-                                onTap: isChest 
-                                    ? () => _abrirCofre(context, levelNumber)
-                                    : () => _iniciarDesafiodeNivel(context, levelNumber),
+                              // Contenedor para el efecto de brillo (glow)
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: isChest ? BoxShape.rectangle : BoxShape.circle,
+                                  borderRadius: isChest ? BorderRadius.circular(20) : null,
+                                  boxShadow: isCompleted && !isChest
+                                    ? [
+                                        BoxShadow(
+                                          color: levelColor.withOpacity(0.5),
+                                          blurRadius: 12,
+                                          spreadRadius: 2,
+                                        ),
+                                      ] 
+                                    : null,
+                                ),
+                                child: GameButton(
+                                  width: 70,
+                                  height: 70,
+                                  borderRadius: isChest ? 20 : 35,
+                                  backgroundColor: levelColor,
+                                  shadowColor: levelShadow,
+                                  onTap: isChest ? () => _abrirCofre(context, levelNumber) : () => _iniciarDesafiodeNivel(context, levelNumber),
+                                  enabled: !isLocked,
                                 child: isChest
                                     ? Icon(
                                         isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
                                         color: isLocked ? Colors.white60 : const Color(0xFF191D2B),
                                         size: 32,
                                       )
-                                    : Text(
-                                        '$levelNumber',
-                                        style: TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color: isLocked ? Colors.white60 : Colors.white,
+                                    : Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: RadialGradient(
+                                            colors: isLocked
+                                                ? [const Color(0xFF5A667D), const Color(0xFF343B4A)]
+                                                : [levelColor.withOpacity(0.6), levelColor],
+                                            center: const Alignment(0.0, -0.2),
+                                            radius: 0.8,
+                                          ),
+                                          border: Border.all(
+                                            color: isLocked ? Colors.transparent : Colors.white.withOpacity(0.1),
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '$levelNumber',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: isLocked ? Colors.white60 : Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
+                                ),
                               ),
 
                               // Tooltip flotante encima si es el nivel activo
@@ -162,7 +209,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                               // Tres estrellas debajo del nivel
                               if (!isChest)
                                 Positioned(
-                                  bottom: -22,
+                                  bottom: isCompleted ? -25 : -22, // Un poco más abajo si está completado
                                   child: _buildStars(isCompleted),
                                 ),
 
@@ -205,8 +252,10 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                   );
                 },
               );
-            },
-          ),
+                },
+              ),
+            ),
+          ],
         );
       },
     );
@@ -218,7 +267,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF58CC02), Color(0xFF46A302)], // Verde vibrante
+          colors: [Color.fromARGB(255, 204, 2, 63), Color.fromARGB(255, 163, 2, 45)], // Verde vibrante
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -283,7 +332,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
           child: Icon(
             Icons.star,
             size: 14,
-            color: isCompleted ? const Color(0xFFFFD166) : const Color(0xFF4A5568),
+            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF4A5568),
           ),
         );
       }),
@@ -320,7 +369,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: const Color(0xFF1E2638),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         title: const Text(
           "❤️ Sin Vidas",
           textAlign: TextAlign.center,
@@ -421,6 +470,46 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   }
 }
 
+class FondoLiquidoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    void dibujarParticula(double x, double y, double radio, Color color, [double glowSpread = 3.0]) {
+      final paintGlow = Paint()
+        ..color = color.withOpacity(0.4) // Brillo sutil
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowSpread);
+
+      final paintCore = Paint()..color = color.withOpacity(0.9);
+
+      canvas.drawCircle(Offset(x, y), radio + glowSpread, paintGlow);
+      canvas.drawCircle(Offset(x, y), radio, paintCore);
+    }
+
+    dibujarParticula(size.width * 0.15, size.height * 0.10, 4.0, Colors.cyanAccent);
+    dibujarParticula(size.width * 0.85, size.height * 0.25, 2.5, Colors.cyan);
+    dibujarParticula(size.width * 0.50, size.height * 0.90, 3.5, Colors.cyanAccent);
+    dibujarParticula(size.width * 0.10, size.height * 0.60, 2.0, const Color(0xFF00C8D2));
+
+    dibujarParticula(size.width * 0.75, size.height * 0.70, 5.0, Colors.amber, 8.0);
+    dibujarParticula(size.width * 0.35, size.height * 0.40, 2.0, Colors.amberAccent);
+    dibujarParticula(size.width * 0.90, size.height * 0.85, 3.0, Colors.orangeAccent);
+    dibujarParticula(size.width * 0.45, size.height * 0.15, 2.0, Colors.amber);
+
+    dibujarParticula(size.width * 0.20, size.height * 0.80, 4.5, Colors.pinkAccent);
+    dibujarParticula(size.width * 0.80, size.height * 0.15, 3.0, const Color(0xFFD63384));
+    dibujarParticula(size.width * 0.65, size.height * 0.55, 2.5, Colors.pink);
+    dibujarParticula(size.width * 0.30, size.height * 0.90, 1.5, Colors.pinkAccent);
+
+    dibujarParticula(size.width * 0.55, size.height * 0.30, 4.0, Colors.deepPurpleAccent);
+    dibujarParticula(size.width * 0.05, size.height * 0.35, 3.0, Colors.purpleAccent);
+    dibujarParticula(size.width * 0.70, size.height * 0.95, 2.0, Colors.purple);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
 /// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
 class PathPainter extends CustomPainter {
   final double x1;
@@ -457,7 +546,7 @@ class PathPainter extends CustomPainter {
     // Curva Bezier cúbica orgánica que simula una carretera S
     final double controlY1 = 60 + 40;
     final double controlY2 = 60 + 100;
-    path.cubicTo(x1, controlY1, x2, controlY2, x2, 140 + 60);
+    path.cubicTo(x1, controlY1, x2, controlY2, x2, 160 + 60); // Ajustado a la nueva altura
 
     canvas.drawPath(path, paintBg);
     canvas.drawPath(path, paintLine);

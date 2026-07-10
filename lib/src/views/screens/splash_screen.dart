@@ -63,8 +63,26 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF191D2B), // Fondo oscuro de juego unificado
-      body: SafeArea(
+      body:Container(
+        width:double.infinity,
+        height:double.infinity,
+        decoration:const BoxDecoration(
+          gradient:LinearGradient(
+            begin:Alignment.topCenter,
+            end:Alignment.bottomCenter,
+            colors:[
+              Color(0xFF1E272E),
+              Color(0xFF6C5CE7),
+              Color(0xFF00CE99),
+              Color(0xFFFF6EC7),
+              
+             
+            
+
+            ],
+          ),
+        ),
+      child:SafeArea(
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
@@ -76,24 +94,29 @@ class _SplashScreenState extends State<SplashScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Título del Juego con brillo de neón degradado
-                    ShaderMask(
-                      shaderCallback: (bounds) => AppTheme.degradadoGlow.createShader(bounds),
-                      child: const Text(
+                    Image.asset(
+                    'assets/imagenes/icon1.png',
+                    width:400,
+                    height:400,
+                    fit:BoxFit.contain,
+                    errorBuilder:(context,error,statckTrace){
+                      return const Text(
                         "CAZADORES DE PIGMENTOS",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.5,
+                        textAlign:TextAlign.center,
+                        style:TextStyle(
+                          color:Colors.white,
+                          fontSize:28,
+                          fontWeight:FontWeight.w900,
+                          letterSpacing:1.5
                         ),
-                      ),
+                        );
+                    }
                     ),
                     const SizedBox(height: 48),
 
                     // Spinner Lottie interactivo central
                     Lottie.asset(
-                      'assets/spinners/spinner.json',
+                      'assets/spinners/bool.json',
                       width: 160,
                       height: 160,
                       fit: BoxFit.contain,
@@ -120,7 +143,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     Text(
                       '$porcentaje%',
                       style: const TextStyle(
-                        color: Color(0xFFFF9F1C),
+                        color: Color(0xFFF3F4F6),
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
@@ -133,6 +156,8 @@ class _SplashScreenState extends State<SplashScreen> {
           },
         ),
       ),
+    ),
     );
+    
   }
 }
