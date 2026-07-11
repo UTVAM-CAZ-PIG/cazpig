@@ -36,15 +36,20 @@ class _MenuPrincipalScreenState extends State<MenuPrincipalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF191D2B), // Fondo oscuro de juego unificado
-      appBar: _buildAppBar(),
-      body: _paginas[_currentIndex],
-      bottomNavigationBar: AppNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+   return Container(
+      // Usamos un color de fondo oscuro y consistente para toda la app.
+      color: const Color(0xFF191D2B),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: _buildAppBar(),
+        extendBody: true, 
+        body: _paginas[_currentIndex],
+        bottomNavigationBar: AppNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+        ),
       ),
-    );
+   );
   }
 
   PreferredSizeWidget? _buildAppBar() {
@@ -58,7 +63,7 @@ class _MenuPrincipalScreenState extends State<MenuPrincipalScreen> {
     if (_currentIndex == 2) titulo = "Ajustes de Juego";
 
     return AppBar(
-      backgroundColor: const Color(0xFF141824),
+      backgroundColor: const Color.fromARGB(255, 18, 17, 17),
       elevation: 0,
       centerTitle: true,
       title: ShaderMask(

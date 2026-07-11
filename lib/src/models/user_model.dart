@@ -1,6 +1,8 @@
 class UserModel {
   final String email;
   final String age;
+  final String name;
+  final String avatarUrl;
   final int xp;
   final int level;
   final int currentLevelReached;
@@ -14,6 +16,8 @@ class UserModel {
   UserModel({
     required this.email,
     required this.age,
+    required this.name,
+    required this.avatarUrl,
     required this.xp,
     required this.level,
     required this.currentLevelReached,
@@ -28,17 +32,21 @@ class UserModel {
   factory UserModel.initial({
     required String email,
     required String age,
+    String? name,
+    String? avatarUrl,
     bool isOffline = false,
   }) {
     return UserModel(
       email: email,
       age: age,
+      name: "Elena Cruz",
+      avatarUrl: "assets/avatar/avatar1.jpeg",
       xp: 1250,
       level: 5,
       currentLevelReached: 1,
       lives: 5,
-      streak: 5, // Reflejado en las capturas
-      pigments: 591, // Reflejado en las capturas
+      streak: 5, 
+      pigments: 591, 
       isOffline: isOffline,
       title: "Cazador Experto",
       badges: ["Primer Trazo", "Racha Color", "Ojo Mágico"],
@@ -48,6 +56,8 @@ class UserModel {
   UserModel copyWith({
     String? email,
     String? age,
+    String?name,
+    String?avatarUrl,
     int? xp,
     int? level,
     int? currentLevelReached,
@@ -61,6 +71,8 @@ class UserModel {
     return UserModel(
       email: email ?? this.email,
       age: age ?? this.age,
+      name:name ?? this.name,
+      avatarUrl:avatarUrl ?? this.avatarUrl,
       xp: xp ?? this.xp,
       level: level ?? this.level,
       currentLevelReached: currentLevelReached ?? this.currentLevelReached,

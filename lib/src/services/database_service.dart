@@ -10,6 +10,8 @@ class DatabaseService {
     return {
       'email': user.email,
       'age': user.age,
+      'name': user.name,
+      'avatarUrl': user.avatarUrl,
       'xp': user.xp,
       'level': user.level,
       'currentLevelReached': user.currentLevelReached,
@@ -28,6 +30,8 @@ class DatabaseService {
     return UserModel(
       email: map['email'] ?? '',
       age: map['age'] ?? '',
+      name: map['name'] ?? '',
+      avatarUrl: map['avatarUrl'] ?? '',
       xp: map['xp'] ?? 0,
       level: map['level'] ?? 1,
       currentLevelReached: map['currentLevelReached'] ?? 1,
