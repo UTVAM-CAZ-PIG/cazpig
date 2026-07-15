@@ -12,6 +12,7 @@ class Nivel1Screen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseGameplayScreen<MixLevelModel, Nivel1Controller>(
       nivel: nivelInicial,
+      ocultarBotonComprobar: true, 
       controllerFactory: (context) => Nivel1Controller(nivelInicial: nivelInicial),
       gameFieldBuilder: (context, controller) {
         
@@ -22,21 +23,11 @@ class Nivel1Screen extends StatelessWidget {
           {'color': Nivel1Controller.verdeCazador, 'nombre': 'Código Cazador', 'formula': 'C18H15N3'},
         ];
 
-        // Ejecución automática si la mezcla es la correcta
-        if (controller.listoParaComprobar && controller.esCorrecto) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            controller.comprobarResultado();
-          });
-        }
-
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ==================== PANEL DE OBJETIVO ====================
             _construirPanelObjetivo(),
             const SizedBox(height: 30),
-
-            // ==================== MATRACES DE FUSIÓN ESTILO LABORATORIO ====================
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -50,7 +41,6 @@ class Nivel1Screen extends StatelessWidget {
             ),
             const SizedBox(height: 25),
 
-            // ==================== INDICADOR DINÁMICO DE COLOR GENERADO ====================
             if (controller.listoParaComprobar) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -99,7 +89,7 @@ class Nivel1Screen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             ] else ...[
-              const SizedBox(height: 64), // Mantiene la consistencia del layout cuando no hay mezcla
+              const SizedBox(height: 64), 
             ],
 
             const Text(
@@ -107,8 +97,6 @@ class Nivel1Screen extends StatelessWidget {
               style: TextStyle(color: Color(0xFF6B7A94), fontSize: 13),
             ),
             const SizedBox(height: 20),
-
-            // ==================== GRILLA DE PIGMENTOS ====================
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -118,7 +106,16 @@ class Nivel1Screen extends StatelessWidget {
                 bool seleccionado = controller.colorSeleccionado1 == col || controller.colorSeleccionado2 == col;
 
                 return GestureDetector(
-                  onTap: () => controller.seleccionarColor(col),
+                  onTap: () async {
+                    controller.seleccionarColor(col);
+
+                    if (controller.listoParaComprobar) {
+                      await Future.delayed(const Duration(milliseconds: 180));
+                      if (context.mounted) {
+                        controller.comprobarResultadoAutomatico(context);
+                      }
+                    }
+                  },
                   child: Container(
                     width: 140,
                     height: 100,
@@ -158,7 +155,6 @@ class Nivel1Screen extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // ==================== BOTÓN DE LIMPIEZA / REINICIO ====================
             if (controller.colorSeleccionado1 != null || controller.colorSeleccionado2 != null) ...[
               TextButton(
                 onPressed: () => controller.reiniciarSeleccion(),
@@ -171,7 +167,7 @@ class Nivel1Screen extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              const SizedBox(height: 48), // Espaciador constante de seguridad
+              const SizedBox(height: 48), 
             ],
           ],
         );

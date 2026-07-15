@@ -10,6 +10,7 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
   final C Function(BuildContext context) controllerFactory;
   final Widget Function(BuildContext context, C controller) gameFieldBuilder;
   final Widget Function(BuildContext context, C controller)? instructionCardBuilder;
+  final bool ocultarBotonComprobar; // <--- NUEVA PROPIEDAD CONTROLADORA
 
   const BaseGameplayScreen({
     super.key,
@@ -17,6 +18,7 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
     required this.controllerFactory,
     required this.gameFieldBuilder,
     this.instructionCardBuilder,
+    this.ocultarBotonComprobar = false, // Por defecto se muestra para otros niveles
   });
 
   @override
@@ -90,7 +92,7 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
         final datos = _controller.datosNivel;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF1E2638), // Fondo oscuro sólido
+          backgroundColor: const Color(0xFF1E2638), 
           appBar: AppBar(
             title: Text('${datos.title} - Nivel ${datos.level}'),
             backgroundColor: const Color(0xFF141824),
@@ -106,7 +108,6 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Lado izquierdo: Instrucciones / Contexto
                       SizedBox(
                         width: esPantallaAncha ? ancho * 0.45 : double.infinity,
                         child: widget.instructionCardBuilder != null
@@ -114,8 +115,6 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                             : _buildDefaultInstructionCard(datos),
                       ),
                       const SizedBox(height: 24, width: 24),
-
-                      // Lado derecho: Área interactiva del nivel específico
                       SizedBox(
                         width: esPantallaAncha ? ancho * 0.45 : double.infinity,
                         child: widget.gameFieldBuilder(context, _controller),
@@ -125,34 +124,35 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                 ),
               ),
 
-              // Botón de Comprobación inferior unificado
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF141824),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: SafeArea(
-                  child: GameButton(
-                    backgroundColor: _controller.listoParaComprobar
-                        ? const Color(0xFF58CC02)
-                        : Colors.grey.shade600,
-                    shadowColor: _controller.listoParaComprobar
-                        ? const Color(0xFF46A302)
-                        : Colors.grey.shade800,
-                    enabled: _controller.listoParaComprobar,
-                    onTap: _comprobar,
-                    child: const Text(
-                      "COMPROBAR",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
+              // SI SE ACTIVA LA BANDERA, QUITAMOS EL CONTENEDOR GRIS DE ABAJO COMPLETAMENTE
+              if (!widget.ocultarBotonComprobar)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF141824),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: SafeArea(
+                    child: GameButton(
+                      backgroundColor: _controller.listoParaComprobar
+                          ? const Color(0xFF58CC02)
+                          : Colors.grey.shade600,
+                      shadowColor: _controller.listoParaComprobar
+                          ? const Color(0xFF46A302)
+                          : Colors.grey.shade800,
+                      enabled: _controller.listoParaComprobar,
+                      onTap: _comprobar,
+                      child: const Text(
+                        "COMPROBAR",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         );
