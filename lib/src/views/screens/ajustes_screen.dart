@@ -27,11 +27,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
         return Stack(
           children: [
             Positioned.fill(
-              child: Container(
-                color: const Color.fromARGB(255, 18, 17, 17),
-                child: CustomPaint(
-                  painter: FondoLiquidoPainter(),
-                ),
+              child: Image.asset(
+                'assets/imagenes/fondo.jpeg',
+                fit:BoxFit.cover,
               ),
             ),
             Scaffold(
@@ -146,6 +144,17 @@ class _AjustesScreenState extends State<AjustesScreen> {
       endIndent: 16,
     );
   }
+
+  Widget _construirSeccionTitulo(String titulo) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+      child: Text(
+        titulo,
+        style: const TextStyle(
+            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black45, letterSpacing: 1.2),
+      ),
+    );
+  }
 }
 
 class FondoLiquidoPainter extends CustomPainter {
@@ -182,14 +191,3 @@ class FondoLiquidoPainter extends CustomPainter {
     return false;
   }
 }
-                  
-  Widget _construirSeccionTitulo(String titulo) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-      child: Text(
-        titulo,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black45, letterSpacing: 1.2),
-      ),
-    );
-  }
-
