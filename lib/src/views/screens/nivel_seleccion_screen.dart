@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:ui' as ui;
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
-import '../widgets/animated_background.dart';
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
@@ -65,10 +65,24 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             Positioned.fill(
               child: Image.asset(
                 'assets/imagenes/fondo.jpeg',
-                fit:BoxFit.cover,
+                fit: BoxFit.cover,
               ),
-            const Positioned.fill(
-              child: AnimatedBackground(child: SizedBox.shrink()),
+            ),
+            // Capa sepia semitransparente para que los sellos contrasten bien
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF2B1A0A).withOpacity(0.45),
+                      const Color(0xFF1A1000).withOpacity(0.30),
+                      const Color(0xFF2B1A0A).withOpacity(0.50),
+                    ],
+                  ),
+                ),
+              ),
             ),
             Scaffold(
               backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
@@ -181,138 +195,194 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     final isLocked = levelNumber > currentLevel;
     final bool isChest = levelNumber % 5 == 0;
 
-    // Colores
-    final int levelType = levelNumber % 3;
-    Color levelColor = Colors.teal;
-    
-
-    if (levelType == 1) {
-      levelColor = const Color(0xFF00C897);
-    } else if (levelType == 2) {
-      levelColor = const Color(0xFFFF9F1C);
-    } else {
- levelColor = const Color(0xFF9B5DE5);
-     
-    }
-
-    if (isChest) {
-      levelColor = const Color(0xFFFFD166); 
-    }
-    if (isCompleted && !isChest) {
-      final int colorCompletado = levelNumber % 4;
-
-      if (colorCompletado == 0) {
-        levelColor = const Color(0xFF9E4747); // Azul cian vibrante pero suave
-      } else if (colorCompletado == 1) {
-        levelColor = const Color(0xFF4A708B); // Rosa sandía / fucsia claro
-      } else if (colorCompletado == 2) {
-        levelColor = const Color(0xFF5A7247); // Verde menta fresco (no neón)
-      } else {
-        levelColor = const Color(0xFF8B6375); // Violeta brillante
-      }
-    }
+    // ── Paleta temática pergamino/pirata ────────────────────────────────
+    Color sealColor;
     if (isLocked) {
-      levelColor = const Color(0xFF4E586E); 
+      sealColor = const Color(0xFF5C6478); // Gris azulado — bloqueado
+    } else if (isChest) {
+      sealColor = const Color(0xFFD4A017); // Dorado oscuro — cofre
+    } else if (isCompleted) {
+      // Distintos matices terrosos/náuticos para completados
+      final shades = [
+        const Color(0xFF7B5E3A), // Marrón cuero
+        const Color(0xFF3A7B6F), // Verde mar
+        const Color(0xFF7B3A4F), // Burdeos
+        const Color(0xFF3A4F7B), // Azul marino
+      ];
+      sealColor = shades[levelNumber % shades.length];
+    } else {
+      // Activo — dorado vivo del pergamino
+      sealColor = const Color(0xFFC8860A);
+    }
+
+    // ── Contenido dentro del sello ───────────────────────────────────────
+    Widget sealContent;
+    if (isChest) {
+      sealContent = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+            color: isLocked ? Colors.white38 : Colors.white,
+            size: 30,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$levelNumber',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: isLocked ? Colors.white38 : Colors.white,
+              shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+            ),
+          ),
+        ],
+      );
+    } else {
+      sealContent = Text(
+        '$levelNumber',
+        style: TextStyle(
+          fontSize: levelNumber >= 100 ? 26 : 34,
+          fontWeight: FontWeight.w900,
+          color: isLocked ? Colors.white38 : Colors.white,
+          shadows: const [
+            Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+      );
+    }
+
+    // ── Nodo base con sello ──────────────────────────────────────────────
+    Widget sealWidget = Stack(
+      alignment: Alignment.center,
+      children: [
+        // Sello teñido
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(sealColor, BlendMode.modulate),
+          child: Image.asset(
+            'assets/imagenes/sello.png',
+            width: 90,
+            height: 90,
+            fit: BoxFit.contain,
+          ),
+        ),
+        // Contenido (número / ícono)
+        sealContent,
+      ],
+    );
+
+    // Glow dorado pulsante en el nivel activo
+    if (isActive) {
+      sealWidget = Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFD166).withOpacity(0.6),
+              blurRadius: 22,
+              spreadRadius: 6,
+            ),
+            BoxShadow(
+              color: const Color(0xFFFFD166).withOpacity(0.25),
+              blurRadius: 40,
+              spreadRadius: 14,
+            ),
+          ],
+        ),
+        child: sealWidget,
+      );
     }
 
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        Container(
-          margin: const EdgeInsets.only(top: 25), // Espacio para tooltips
-          child:GestureDetector(
-           onTap: isLocked
-           ? null
-           :(isChest ? () => _abrirCofre(context, levelNumber) : () => _iniciarDesafiodeNivel(context, levelNumber)),
-           child:SizedBox(
-            width:150,
-            height:150,
-           child: isChest
-           ? Icon(isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
-           color:isLocked ? Colors.white60 : const Color(0xFF191D2B),
-           size:40,
-           )
-           :Stack(
-            alignment:Alignment.center,
-            children:[
-              ColorFiltered(colorFilter: ColorFilter.mode(levelColor,BlendMode.srcIn,),
-              child:Image.asset(
-                'assets/imagenes/sello.png',
-                width:150,
-                height:150,
-                fit:BoxFit.contain,
-              ),
-              ),
-              Text(
-                '$levelNumber',
-                style:TextStyle(
-                  fontSize:42,
-                  fontWeight:FontWeight.bold,
-                  color:isLocked ? Colors.white60 : Colors.white,
-                  shadows:[
-                    Shadow(
-                      color:Colors.black.withOpacity(0.5),
-                      blurRadius:4,
-                      offset:const Offset(0,2),
-                    )
-                  ],
-                ),
-              ),
-            ],
+        // Tooltip "JUGAR" flotante sobre el nodo activo
+        if (isActive)
+          const Positioned(top: -30, child: FloatingTooltip()),
 
-           ),
+        // Nodo principal
+        GestureDetector(
+          onTap: isLocked
+              ? null
+              : (isChest
+                  ? () => _abrirCofre(context, levelNumber)
+                  : () => _iniciarDesafiodeNivel(context, levelNumber)),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: sealWidget,
           ),
-        ), // 
         ),
 
-        if (isActive)
-          const Positioned(top: -25, child: FloatingTooltip()),
+        // Estrellas debajo
         if (!isChest)
           Positioned(
-            bottom: isCompleted ? -15 : -12,
+            bottom: -8,
             child: _buildStars(isCompleted),
           ),
+
+        // Badge completado ✔
         if (isCompleted && !isChest)
-          const Positioned(
-            bottom: 5,
-            right: -5,
-            child: CircleAvatar(
-              radius: 12,
-              backgroundColor: Color(0xFF58CC02),
-              child: Icon(Icons.check, size: 14, color: Colors.white),
+          Positioned(
+            bottom: 8,
+            right: -6,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: const Color(0xFF58CC02),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+              ),
+              child: const Icon(Icons.check, size: 13, color: Colors.white),
             ),
           ),
+
+        // Badge bloqueado 🔒
         if (isLocked)
-          const Positioned(
-            bottom: 5,
-            right: -5,
-            child: CircleAvatar(
-              radius: 11,
-              backgroundColor: Color(0xFF2C3545),
-              child: Icon(Icons.lock, size: 11, color: Colors.white60),
+          Positioned(
+            bottom: 8,
+            right: -6,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C3545),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 1.5),
+              ),
+              child: const Icon(Icons.lock, size: 12, color: Colors.white38),
             ),
           ),
       ],
     );
   }
 
+
   Widget _buildSectionHeader() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-          color: const Color(0xFF1E1E2A).withOpacity(0.85), // Verde vibrante
-        borderRadius: BorderRadius.circular(30),
-        border:Border.all(
-          color:const Color(0xFFFFD166).withOpacity(0.5),
-          width:2
+        // Marrón pergamino semitransparente — se integra con el fondo
+        color: const Color(0xFF3D2B1A).withOpacity(0.82),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFD4A017).withOpacity(0.7),
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: const Color(0xFFD4A017).withOpacity(0.25),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -322,51 +392,65 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Badge de sección
                 Container(
-                  padding:const EdgeInsets.symmetric(horizontal:10,vertical:4),
-                   decoration:BoxDecoration(
-                    color:const Color(0xFFFFD166).withOpacity(0.2),
-                    borderRadius:BorderRadius.circular(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A017).withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD4A017).withOpacity(0.6)),
                   ),
-               child:const Text(
-                  "SECCIÓN 1 · UNIDAD 1",
-                  style: TextStyle(
-                    color: Color(0xFFFFD166),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                  child: const Text(
+                    "⚓  MAPA · RUTA 1",
+                    style: TextStyle(
+                      color: Color(0xFFFFD166),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
                   ),
                 ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 const Text(
                   "Ruta de los Pigmentos",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
+                    color: Color(0xFFF5E6C8),
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  "Supera mezclas, branding y degradados infinitos para coronarte maestro.",
+                  "Supera mezclas, branding y degradados para coronarte maestro.",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
+                    color: const Color(0xFFD4B896).withOpacity(0.9),
+                    fontSize: 13,
                     height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Container(
-          padding:const EdgeInsets.all(12),
-          decoration:const BoxDecoration(
-            color:Color(0xFFFFD166),
-            shape:BoxShape.circle,
-          ),
-          child:const Icon(Icons.palette_rounded,color:Color(0xFF1E1E2A),size:36)
+          const SizedBox(width: 14),
+          // Ícono temático con sello de cera
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFFD4A017),
+                  BlendMode.modulate,
+                ),
+                child: Image.asset(
+                  'assets/imagenes/sello.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const Icon(Icons.explore_rounded, color: Colors.white, size: 26),
+            ],
           ),
         ],
       ),
@@ -376,14 +460,15 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   Widget _buildStars(bool isCompleted) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (starIndex) {
+      children: List.generate(3, (i) {
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1.0),
+          padding: const EdgeInsets.symmetric(horizontal: 1.5),
           child: Icon(
             Icons.star_rounded,
-            size: 22,
-            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF4A5568).withOpacity(0.7),
-            
+            size: 18,
+            color: isCompleted
+                ? const Color(0xFFD4A017)   // Dorado pergamino
+                : const Color(0xFF6B5A45).withOpacity(0.6), // Marrón apagado
           ),
         );
       }),
@@ -541,17 +626,17 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 
 
 /// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
-class PathPainter extends CustomPainter {
-  final double x1;
-  final double x2;
-  final bool unlocked;
-  final Color activeColor;
+class BranchPainter extends CustomPainter {
+  final bool isCenterRow;
+  final bool isLeftUnlocked;
+  final bool isRightUnlocked;
+  final double screenWidth;
 
-  PathPainter({
-    required this.x1,
-    required this.x2,
-    required this.unlocked,
-    required this.activeColor,
+  BranchPainter({
+    required this.isCenterRow,
+    required this.isLeftUnlocked,
+    required this.isRightUnlocked,
+    required this.screenWidth,
   });
 
   @override
@@ -563,30 +648,28 @@ class PathPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final paintLineLeft = Paint()
-      ..color = isLeftUnlocked ? const Color(0XFFD4AF37): const Color(0xFF384256)
+      ..color = isLeftUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-      final paintLineRight = Paint()
-      ..color = isRightUnlocked ? const Color(0XFFD4AF37) : const Color(0xFF384256)
+    final paintLineRight = Paint()
+      ..color = isRightUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-
-      final double centerX = screenWidth / 2;
+    final double centerX = screenWidth / 2;
     // La separación debe coincidir con el MainAxisAlignment.spaceEvenly
-    final double leftX = screenWidth * 0.25; 
+    final double leftX = screenWidth * 0.25;
     final double rightX = screenWidth * 0.75;
-    
+
     final double startY = 60.0 + (75 / 2); // Centro del botón actual
     final double endY = 180.0 + 60.0 + (75 / 2); // Centro del botón en la SIGUIENTE fila
 
     final path1 = Path();
     final path2 = Path();
 
-   
     if (isCenterRow) {
       // De Centro a Izquierda y Derecha (División)
       path1.moveTo(centerX, startY);
@@ -621,17 +704,16 @@ class PathPainter extends CustomPainter {
     paint.style = PaintingStyle.fill;
 
     final Paint shadowPaint = Paint()
-    ..color = Colors.black.withOpacity(0.3)
-    ..style = PaintingStyle.fill;
+      ..color = Colors.black.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
 
     // Extrae las métricas del path para ir dibujando fragmentos
     for (ui.PathMetric pathMetric in path.computeMetrics()) {
       while (distance < pathMetric.length) {
         final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
-        if(tangent !=null){ 
-          canvas.drawCircle(tangent.position + const Offset(0,2),4.5,shadowPaint);
-
-          canvas.drawCircle(tangent.position,4.5,paint);
+        if (tangent != null) {
+          canvas.drawCircle(tangent.position + const Offset(0, 2), 4.5, shadowPaint);
+          canvas.drawCircle(tangent.position, 4.5, paint);
         }
         distance += dotSpacing;
       }

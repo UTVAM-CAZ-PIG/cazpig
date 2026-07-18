@@ -173,7 +173,6 @@ class _AjustesScreenState extends State<AjustesScreen> {
       ),
     );
   }
-}
 
   void _mostrarConfirmacionReinicio(BuildContext context) {
     showDialog(
@@ -212,11 +211,6 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 
                 await UserController().reiniciarTodoElProgreso();
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
