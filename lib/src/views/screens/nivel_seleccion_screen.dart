@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 import '../../controllers/user_controller.dart';
-import '../widgets/game_button.dart';
-import '../widgets/app_navigation_bar.dart'; // Asegúrate de que este import coincida con la ruta de tu barra
+import '../widgets/app_navigation_bar.dart';
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
@@ -17,6 +16,58 @@ import 'gameplay/nivel10_screen.dart';
 import 'gameplay/nivel11_screen.dart';
 import 'gameplay/nivel12_screen.dart';
 
+// ─── Constantes globales de layout ──────────────────────────────────────────
+const int    _kTotalLevels  = 100;
+const double _kRowHeight    = 150.0;  // Espacio vertical entre filas
+const double _kSealSize     = 90.0;   // Tamaño del sello de cera
+const double _kHeaderHeight = 170.0;  // Alto reservado para el header
+
+/// Retorna el índice de fila (1-based) correspondiente a un nivel.
+/// Patrón: L1 en F1 (centro), L2 y L3 en F2 (lados), L4 en F3 (centro), L5 y L6 en F4 (lados)...
+int _getRowForLevel(int level) {
+  int group = (level - 1) ~/ 3;
+  int rem = (level - 1) % 3;
+  return group * 2 + (rem == 0 ? 1 : 2);
+}
+
+/// Retorna la cantidad total de filas necesarias para todos los niveles
+int _getTotalRows(int totalLevels) {
+  return _getRowForLevel(totalLevels);
+}
+
+/// Retorna la coordenada X del centro del nodo del nivel
+double _nodeX(int level, double screenWidth) {
+  int rem = (level - 1) % 3;
+  final double center = screenWidth * 0.5;
+  final double amp = screenWidth * 0.28;
+  if (rem == 0) return center;
+  if (rem == 1) return center - amp;
+  return center + amp;
+}
+
+/// Retorna la coordenada Y del centro del nodo del nivel
+double _nodeY(int level) {
+  int row = _getRowForLevel(level);
+  return _kHeaderHeight + (row - 0.5) * _kRowHeight;
+}
+
+/// Retorna la coordenada X de la hebra (izquierda o derecha) en una fila dada
+double _strandX(int row, bool isLeft, double screenWidth) {
+  final double center = screenWidth * 0.5;
+  final double amp = screenWidth * 0.28;
+  if (row % 2 == 1) {
+    return center; // Fila central (unión)
+  } else {
+    return isLeft ? (center - amp) : (center + amp); // Fila separada (lados)
+  }
+}
+
+/// Retorna la coordenada Y del centro de una fila dada
+double _rowY(int row) {
+  return _kHeaderHeight + (row - 0.5) * _kRowHeight;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 class NivelSeleccionScreen extends StatefulWidget {
   const NivelSeleccionScreen({super.key});
 
@@ -24,30 +75,32 @@ class NivelSeleccionScreen extends StatefulWidget {
   State<NivelSeleccionScreen> createState() => _NivelSeleccionScreenState();
 }
 
-class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
+class _NivelSeleccionScreenState extends State<NivelSeleccionScreen>
+    with SingleTickerProviderStateMixin {
   final UserController _userController = UserController();
   late ScrollController _scrollController;
+  late AnimationController _pulseCtrl;
 
   @override
   void initState() {
     super.initState();
-    // Calcular en qué fila está el nivel actual
-    final activeLevel = _userController.currentUser.currentLevelReached;
-    final double initialOffset = max(0.0, (activeLevel - 2) * 190.0);
+    final int active = _userController.currentUser.currentLevelReached;
+    final int activeRow = _getRowForLevel(active);
+    // Scroll para mostrar el nodo activo cerca del centro de la pantalla
+    final double initialOffset =
+        max(0.0, _kHeaderHeight + (activeRow - 3) * _kRowHeight);
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
-  }
 
-  // Función matemática para saber en qué fila cae un nivel (patrón 1-2-1-2)
-  int _getRowForLevel(int level) {
-    if (level <= 0) return 0;
-    int blocks = (level - 1) ~/ 3;
-    int remainder = (level - 1) % 3;
-    return (blocks * 2) + (remainder == 0 ? 0 : 1);
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _pulseCtrl.dispose();
     super.dispose();
   }
 
@@ -55,19 +108,20 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: _userController,
-      builder: (context, child) {
-        final currentLevel = _userController.currentUser.currentLevelReached;
+      builder: (context, _) {
+        final int currentLevel =
+            _userController.currentUser.currentLevelReached;
+        final int totalRows = _getTotalRows(_kTotalLevels);
 
         return Stack(
           children: [
-            // 1. FONDO (Solo la imagen pergamino)
+            // ── 1. Fondo pergamino ─────────────────────────────────────────
             Positioned.fill(
               child: Image.asset(
                 'assets/imagenes/fondo.jpeg',
                 fit: BoxFit.cover,
               ),
             ),
-            // Capa sepia semitransparente para que los sellos contrasten bien
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -75,201 +129,67 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      const Color(0xFF2B1A0A).withOpacity(0.45),
-                      const Color(0xFF1A1000).withOpacity(0.30),
                       const Color(0xFF2B1A0A).withOpacity(0.50),
+                      const Color(0xFF1A1000).withOpacity(0.30),
+                      const Color(0xFF2B1A0A).withOpacity(0.55),
                     ],
                   ),
                 ),
               ),
             ),
-            
-            // 2. LA PANTALLA
+
+            // ── 2. Scaffold con el mapa ────────────────────────────────────
             Scaffold(
               backgroundColor: Colors.transparent,
-              extendBody: true, // Hace que los niveles pasen por detrás elegantemente
-              
-              // 👈 AQUÍ SE QUEDA LA BARRA FIXA ABAJO
+              extendBody: true,
               bottomNavigationBar: AppNavigationBar(
                 currentIndex: 1,
-                onTap: (index) {
-                  print("Click en pestaña: $index");
-                },
+                onTap: (_) {},
               ),
-              
               body: LayoutBuilder(
                 builder: (context, constraints) {
-                  final double screenWidth = constraints.maxWidth;
+                  final double sw = constraints.maxWidth;
+                  final double totalH =
+                      _kHeaderHeight + (totalRows + 1) * _kRowHeight + 180;
 
-                  double getXOffset(int index) {
-                    return screenWidth / 2 + sin(index * 0.8) * (screenWidth * 0.23);
-                  }
-
-                  return ListView.builder(
+                  return SingleChildScrollView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.only(bottom: 140), // Espacio para que el nivel 100 no quede tapado
-                    itemCount: 101,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _buildSectionHeader(); // Tu Header superior normal
-                      }
-
-                      final levelNumber = index; // Nivel 1 a 100
-                      final isCompleted = levelNumber < currentLevel;
-                      final isActive = levelNumber == currentLevel;
-                      final isLocked = levelNumber > currentLevel;
-                      final bool isChest = levelNumber % 5 == 0; // Cada 5 niveles hay un cofre de regalo
-
-                      // Determinar el color base según el tipo de nivel
-                      final int levelType = levelNumber % 3;
-                      Color levelColor = Colors.teal;
-                      Color levelShadow = Colors.teal.shade800;
-
-                      if (levelType == 1) {
-                        levelColor = const Color(0xFF00C897); // Verde azulado brillante
-                        levelShadow = const Color(0xFF009673);
-                      } else if (levelType == 2) {
-                        levelColor = const Color(0xFFFF9F1C); // Naranja brillante
-                        levelShadow = const Color(0xFFCC7F16);
-                      } else {
-                        levelColor = const Color(0xFF9B5DE5); // Morado neón
-                        levelShadow = const Color(0xFF7B4AB5);
-                      }
-
-                      if (isChest) {
-                        levelColor = const Color(0xFFFFD166); // Oro/Dorado para el cofre
-                        levelShadow = const Color(0xFFD4AA3F);
-                      }
-
-                      // Si está completado, color verde esmeralda brillante
-                      if (isCompleted && !isChest) {
-                        levelColor = const Color(0xFF58CC02);
-                        levelShadow = const Color(0xFF46A302);
-                      }
-
-                      // Si está bloqueado, color gris
-                      if (isLocked) {
-                        levelColor = const Color(0xFF4E586E);
-                        levelShadow = const Color(0xFF343B4A);
-                      }
-
-                      final double currentX = getXOffset(levelNumber);
-
-                      return SizedBox(
-                        height: 190, // Altura uniforme controlada para evitar cortes
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // Elemento interactivo en 3D (Nivel o Cofre)
-                            Positioned(
-                              left: currentX - 40, // Centrado para un botón de 80px de ancho
-                              top: 25,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                clipBehavior: Clip.none,
-                                children: [
-                                  // Estructura Neumórfica 3D (Estilo Duolingo/Gaming)
-                                  SizedBox(
-                                    width: 80,
-                                    height: 86,
-                                    child: Stack(
-                                      children: [
-                                        // Capa Inferior (Sombra tridimensional del botón)
-                                        Positioned(
-                                          bottom: 0,
-                                          child: Container(
-                                            width: 80,
-                                            height: 76,
-                                            decoration: BoxDecoration(
-                                              color: levelShadow,
-                                              shape: isChest ? BoxShape.rectangle : BoxShape.circle,
-                                              borderRadius: isChest ? BorderRadius.circular(20) : null,
-                                            ),
-                                          ),
-                                        ),
-                                        // Capa Superior (El frente interactivo del botón)
-                                        Positioned(
-                                          top: 0,
-                                          child: GameButton(
-                                            width: 80,
-                                            height: 76,
-                                            borderRadius: isChest ? 20 : 38,
-                                            backgroundColor: levelColor,
-                                            shadowColor: Colors.transparent, // Anulamos sombra nativa
-                                            onTap: isChest 
-                                                ? () => _abrirCofre(context, levelNumber) 
-                                                : () => _iniciarDesafiodeNivel(context, levelNumber),
-                                            enabled: !isLocked,
-                                            child: isChest
-                                                ? Icon(
-                                                    isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
-                                                    color: isLocked ? Colors.white60 : const Color(0xFF191D2B),
-                                                    size: 32,
-                                                  )
-                                                : Container(
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      gradient: RadialGradient(
-                                                        colors: isLocked
-                                                            ? [const Color(0xFF5A667D), const Color(0xFF343B4A)]
-                                                            : [levelColor.withOpacity(0.4), levelColor],
-                                                        center: const Alignment(0.0, -0.2),
-                                                        radius: 0.8,
-                                                      ),
-                                                    ),
-                                                    child: Center(
-                                                      child: Text(
-                                                        '$levelNumber',
-                                                        style: const TextStyle(
-                                                          fontSize: 26,
-                                                          fontWeight: FontWeight.w900,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Tooltip flotante encima si es el nivel activo
-                                  if (isActive)
-                                    const Positioned(
-                                      top: -45,
-                                      child: FloatingTooltip(),
-                                    ),
-
-                                  // Tres estrellas debajo del nivel
-                                  if (!isChest)
-                                    Positioned(
-                                      bottom: -22,
-                                      child: _buildStars(isCompleted),
-                                    ),
-
-                                  // Checkmark si está completado
-                                  if (isCompleted && !isChest)
-                                    const Positioned(
-                                      bottom: 5,
-                                      right: -2,
-                                      child: CircleAvatar(
-                                        radius: 12,
-                                        backgroundColor: Color(0xFF58CC02), // Verde vibrante
-                                        child: Icon(
-                                          Icons.check,
-                                          size: 14,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                    child: SizedBox(
+                      width: sw,
+                      height: totalH,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // ── Camino sinuoso punteado (Doble hélice pura) ──
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _PathPainter(
+                                screenWidth: sw,
+                                currentLevel: currentLevel,
+                                totalRows: totalRows,
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    },
+                          ),
+
+                          // ── Header de sección ───────────────────────────
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: _buildSectionHeader(),
+                          ),
+
+                          // ── Nodos de nivel ──────────────────────────────
+                          for (int lvl = 1; lvl <= _kTotalLevels; lvl++)
+                            ..._buildSealNode(
+                              context: context,
+                              level: lvl,
+                              currentLevel: currentLevel,
+                              screenWidth: sw,
+                            ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
@@ -280,219 +200,46 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     );
   }
 
-  // --- El resto de tus métodos siguen igual (_buildSectionHeader, _mostrarCompraVidasDialog, etc.) ---
-  // Añado aquí la lógica del nodo limpio para no saturar el build
-  
-  Widget _buildLevelNode(int levelNumber, int currentLevel) {
-    final isCompleted = levelNumber < currentLevel;
-    final isActive = levelNumber == currentLevel;
-    final isLocked = levelNumber > currentLevel;
-    final bool isChest = levelNumber % 5 == 0;
-
-    // ── Paleta temática pergamino/pirata ────────────────────────────────
-    Color sealColor;
-    if (isLocked) {
-      sealColor = const Color(0xFF5C6478); // Gris azulado — bloqueado
-    } else if (isChest) {
-      sealColor = const Color(0xFFD4A017); // Dorado oscuro — cofre
-    } else if (isCompleted) {
-      // Distintos matices terrosos/náuticos para completados
-      final shades = [
-        const Color(0xFF7B5E3A), // Marrón cuero
-        const Color(0xFF3A7B6F), // Verde mar
-        const Color(0xFF7B3A4F), // Burdeos
-        const Color(0xFF3A4F7B), // Azul marino
-      ];
-      sealColor = shades[levelNumber % shades.length];
-    } else {
-      // Activo — dorado vivo del pergamino
-      sealColor = const Color(0xFFC8860A);
-    }
-
-    // ── Contenido dentro del sello ───────────────────────────────────────
-    Widget sealContent;
-    if (isChest) {
-      sealContent = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
-            color: isLocked ? Colors.white38 : Colors.white,
-            size: 30,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '$levelNumber',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: isLocked ? Colors.white38 : Colors.white,
-              shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
-            ),
-          ),
-        ],
-      );
-    } else {
-      sealContent = Text(
-        '$levelNumber',
-        style: TextStyle(
-          fontSize: levelNumber >= 100 ? 26 : 34,
-          fontWeight: FontWeight.w900,
-          color: isLocked ? Colors.white38 : Colors.white,
-          shadows: const [
-            Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
-          ],
-        ),
-      );
-    }
-
-    // ── Nodo base con sello ──────────────────────────────────────────────
-    Widget sealWidget = Stack(
-      alignment: Alignment.center,
-      children: [
-        // Sello teñido
-        ColorFiltered(
-          colorFilter: ColorFilter.mode(sealColor, BlendMode.modulate),
-          child: Image.asset(
-            'assets/imagenes/sello.png',
-            width: 90,
-            height: 90,
-            fit: BoxFit.contain,
-          ),
-        ),
-        // Contenido (número / ícono)
-        sealContent,
-      ],
-    );
-
-    // Glow dorado pulsante en el nivel activo
-    if (isActive) {
-      sealWidget = Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFFD166).withOpacity(0.6),
-              blurRadius: 22,
-              spreadRadius: 6,
-            ),
-            BoxShadow(
-              color: const Color(0xFFFFD166).withOpacity(0.25),
-              blurRadius: 40,
-              spreadRadius: 14,
-            ),
-          ],
-        ),
-        child: sealWidget,
-      );
-    }
-
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        // Tooltip "JUGAR" flotante sobre el nodo activo
-        if (isActive)
-          const Positioned(top: -30, child: FloatingTooltip()),
-
-        // Nodo principal
-        GestureDetector(
-          onTap: isLocked
-              ? null
-              : (isChest
-                  ? () => _abrirCofre(context, levelNumber)
-                  : () => _iniciarDesafiodeNivel(context, levelNumber)),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: sealWidget,
-          ),
-        ),
-
-        // Estrellas debajo
-        if (!isChest)
-          Positioned(
-            bottom: -8,
-            child: _buildStars(isCompleted),
-          ),
-
-        // Badge completado ✔
-        if (isCompleted && !isChest)
-          Positioned(
-            bottom: 8,
-            right: -6,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: const Color(0xFF58CC02),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
-              ),
-              child: const Icon(Icons.check, size: 13, color: Colors.white),
-            ),
-          ),
-
-        // Badge bloqueado 🔒
-        if (isLocked)
-          Positioned(
-            bottom: 8,
-            right: -6,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C3545),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24, width: 1.5),
-              ),
-              child: const Icon(Icons.lock, size: 12, color: Colors.white38),
-            ),
-          ),
-      ],
-    );
-  }
-
-
+  // ── Header de sección ──────────────────────────────────────────────────────
   Widget _buildSectionHeader() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      margin: const EdgeInsets.fromLTRB(16, 52, 16, 8),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        // Marrón pergamino semitransparente — se integra con el fondo
-        color: const Color(0xFF3D2B1A).withOpacity(0.82),
+        color: const Color(0xFF3D2B1A).withOpacity(0.88),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFD4A017).withOpacity(0.7),
+          color: const Color(0xFFD4A017).withOpacity(0.72),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4A017).withOpacity(0.25),
-            blurRadius: 20,
+            color: const Color(0xFFD4A017).withOpacity(0.28),
+            blurRadius: 22,
             spreadRadius: 2,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.45),
+            blurRadius: 14,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Badge de sección
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4A017).withOpacity(0.25),
+                    color: const Color(0xFFD4A017).withOpacity(0.22),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFD4A017).withOpacity(0.6)),
+                    border: Border.all(
+                        color: const Color(0xFFD4A017).withOpacity(0.58)),
                   ),
                   child: const Text(
                     "⚓  MAPA · RUTA 1",
@@ -518,7 +265,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                 Text(
                   "Supera mezclas, branding y degradados para coronarte maestro.",
                   style: TextStyle(
-                    color: const Color(0xFFD4B896).withOpacity(0.9),
+                    color: const Color(0xFFD4B896).withOpacity(0.88),
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -527,7 +274,6 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             ),
           ),
           const SizedBox(width: 14),
-          // Ícono temático con sello de cera
           Stack(
             alignment: Alignment.center,
             children: [
@@ -543,12 +289,227 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                   fit: BoxFit.contain,
                 ),
               ),
-              const Icon(Icons.explore_rounded, color: Colors.white, size: 26),
+              const Icon(Icons.explore_rounded,
+                  color: Colors.white, size: 26),
             ],
           ),
         ],
       ),
     );
+  }
+
+  // ── Nodo de nivel: devuelve Positioned directos al canvas Stack ────────────
+  List<Widget> _buildSealNode({
+    required BuildContext context,
+    required int level,
+    required int currentLevel,
+    required double screenWidth,
+  }) {
+    final bool isCompleted = level < currentLevel;
+    final bool isActive    = level == currentLevel;
+    final bool isLocked    = level > currentLevel;
+    final bool isChest     = level % 5 == 0;
+
+    // ── Paleta temática pergamino/pirata ────────────────────────────────────
+    Color sealColor;
+    if (isLocked) {
+      sealColor = const Color(0xFF4A5268);
+    } else if (isChest) {
+      sealColor = const Color(0xFFD4A017);
+    } else if (isCompleted) {
+      final shades = [
+        const Color(0xFF7B5E3A),
+        const Color(0xFF3A7B6F),
+        const Color(0xFF7B3A4F),
+        const Color(0xFF3A4F7B),
+      ];
+      sealColor = shades[level % shades.length];
+    } else {
+      sealColor = const Color(0xFFC8860A); // Activo
+    }
+
+    // ── Contenido dentro del sello ───────────────────────────────────────
+    Widget sealContent;
+    if (isChest) {
+      sealContent = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+            color: isLocked ? Colors.white38 : Colors.white,
+            size: 28,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$level',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: isLocked ? Colors.white38 : Colors.white,
+              shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+            ),
+          ),
+        ],
+      );
+    } else {
+      sealContent = Text(
+        '$level',
+        style: TextStyle(
+          fontSize: level >= 100 ? 26 : 32,
+          fontWeight: FontWeight.w900,
+          color: isLocked ? Colors.white38 : Colors.white,
+          shadows: const [
+            Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+      );
+    }
+
+    // ── Sello base ──────────────────────────────────────────────────────
+    Widget sealWidget = Stack(
+      alignment: Alignment.center,
+      children: [
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(sealColor, BlendMode.modulate),
+          child: Image.asset(
+            'assets/imagenes/sello.png',
+            width: _kSealSize,
+            height: _kSealSize,
+            fit: BoxFit.contain,
+          ),
+        ),
+        sealContent,
+      ],
+    );
+
+    // Glow pulsante dorado para el nivel activo
+    if (isActive) {
+      sealWidget = AnimatedBuilder(
+        animation: _pulseCtrl,
+        builder: (_, child) => Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFD166)
+                    .withOpacity(0.5 + _pulseCtrl.value * 0.3),
+                blurRadius: 18 + _pulseCtrl.value * 20,
+                spreadRadius: 4 + _pulseCtrl.value * 10,
+              ),
+            ],
+          ),
+          child: child,
+        ),
+        child: sealWidget,
+      );
+    }
+
+    final double cx = _nodeX(level, screenWidth);
+    final double cy = _nodeY(level);
+    const double half = _kSealSize / 2;
+
+    final double rotationAngle = sin(level * 1.5) * 0.15; // Rotación orgánica
+
+    return [
+      // 1️⃣ Tooltip "¡JUGAR!" — encima del sello activo
+      if (isActive)
+        Positioned(
+          left: cx - 55,
+          top: cy - half - 48,
+          width: 110,
+          child: const FloatingTooltip(),
+        ),
+
+      // 2️⃣ Sello de cera (Nivel) — centrado EXACTAMENTE en (cx, cy)
+      Positioned(
+        left: cx - half,
+        top: cy - half,
+        width: _kSealSize,
+        height: _kSealSize,
+        child: Transform.rotate(
+          angle: rotationAngle,
+          child: GestureDetector(
+            onTap: isLocked
+                ? null
+                : (isChest
+                    ? () => _abrirCofre(context, level)
+                    : () => _iniciarDesafiodeNivel(context, level)),
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                // Sombra suave debajo del sello
+                Positioned(
+                  top: 3,
+                  left: 2,
+                  child: Opacity(
+                    opacity: 0.25,
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                      child: Image.asset(
+                        'assets/imagenes/sello.png',
+                        width: _kSealSize,
+                        height: _kSealSize,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+                sealWidget,
+
+                // Badge ✔ completado
+                if (isCompleted && !isChest)
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E7D00),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFF5E6C8), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.35),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2))
+                        ],
+                      ),
+                      child: const Icon(Icons.check, size: 13, color: Colors.white),
+                    ),
+                  ),
+
+                // Badge 🔒 bloqueado
+                if (isLocked)
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C3545),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 1.5),
+                      ),
+                      child: const Icon(Icons.lock, size: 11, color: Colors.white38),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+
+      // 3️⃣ Estrellas — justo debajo del sello
+      if (!isChest)
+        Positioned(
+          left: cx - 28,
+          top: cy + half + 4,
+          child: _buildStars(isCompleted),
+        ),
+    ];
   }
 
   Widget _buildStars(bool isCompleted) {
@@ -559,57 +520,42 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 1.5),
           child: Icon(
             Icons.star_rounded,
-            size: 18,
+            size: 16,
             color: isCompleted
-                ? const Color(0xFFD4A017)   // Dorado pergamino
-                : const Color(0xFF6B5A45).withOpacity(0.6), // Marrón apagado
+                ? const Color(0xFFD4A017)
+                : const Color(0xFF6B5A45).withOpacity(0.55),
           ),
         );
       }),
     );
   }
 
+  // ── Navegación ─────────────────────────────────────────────────────────────
   void _iniciarDesafiodeNivel(BuildContext context, int nivel) {
     if (_userController.currentUser.lives <= 0) {
       _mostrarCompraVidasDialog(context);
       return;
     }
-
-    Widget pantallaDestino;
-    int tipo = nivel % 12;
-
-    if (tipo == 1) {
-      pantallaDestino = Nivel1Screen(nivelInicial: nivel);
-    } else if (tipo == 2) {
-      pantallaDestino = Nivel2Screen(nivelInicial: nivel);
-    } else if (tipo == 3) {
-      pantallaDestino = Nivel3Screen(nivelInicial: nivel);
-    } else if (tipo == 4) {
-      pantallaDestino = Nivel4Screen(nivelInicial: nivel);
-    } else if (tipo == 5) {
-      pantallaDestino = Nivel5Screen(nivelInicial: nivel);
-    } else if (tipo == 6) {
-      pantallaDestino = Nivel6Screen(nivelInicial: nivel);
-    } else if (tipo == 7) {
-      pantallaDestino = Nivel7Screen(nivelInicial: nivel);
-    } else if (tipo == 8) {
-      pantallaDestino = Nivel8Screen(nivelInicial: nivel);
-    } else if (tipo == 9) {
-      pantallaDestino = Nivel9Screen(nivelInicial: nivel);
-    } else if (tipo == 10) {
-      pantallaDestino = Nivel10Screen(nivelInicial: nivel);
-    } else if (tipo == 11) {
-      pantallaDestino = Nivel11Screen(nivelInicial: nivel);
-    } else {
-      pantallaDestino = Nivel12Screen(nivelInicial: nivel);
+    Widget pantalla;
+    final int tipo = nivel % 12;
+    switch (tipo) {
+      case 1:  pantalla = Nivel1Screen(nivelInicial: nivel);  break;
+      case 2:  pantalla = Nivel2Screen(nivelInicial: nivel);  break;
+      case 3:  pantalla = Nivel3Screen(nivelInicial: nivel);  break;
+      case 4:  pantalla = Nivel4Screen(nivelInicial: nivel);  break;
+      case 5:  pantalla = Nivel5Screen(nivelInicial: nivel);  break;
+      case 6:  pantalla = Nivel6Screen(nivelInicial: nivel);  break;
+      case 7:  pantalla = Nivel7Screen(nivelInicial: nivel);  break;
+      case 8:  pantalla = Nivel8Screen(nivelInicial: nivel);  break;
+      case 9:  pantalla = Nivel9Screen(nivelInicial: nivel);  break;
+      case 10: pantalla = Nivel10Screen(nivelInicial: nivel); break;
+      case 11: pantalla = Nivel11Screen(nivelInicial: nivel); break;
+      default: pantalla = Nivel12Screen(nivelInicial: nivel); break;
     }
-
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => pantallaDestino),
-    ).then((_) {
-      _userController.verificarYRegenerarVidas();
-    });
+      MaterialPageRoute(builder: (_) => pantalla),
+    ).then((_) => _userController.verificarYRegenerarVidas());
   }
 
   void _mostrarCompraVidasDialog(BuildContext context) {
@@ -617,47 +563,50 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        title: const Text(
-          "❤️ Sin Vidas",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        backgroundColor: const Color(0xFF1A1000),
+        title: const Text("❤️ Sin Vidas",
+            textAlign: TextAlign.center,
+            style:
+                TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.favorite_rounded, color: Color(0xFFFF4B4B), size: 70),
             SizedBox(height: 16),
             Text(
-              "No tienes vidas suficientes para jugar. ¿Quieres reponer tus 5 vidas de inmediato?",
+              "No tienes vidas suficientes para jugar.\n¿Quieres reponer tus 5 vidas de inmediato?",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70),
             ),
             SizedBox(height: 8),
-            Text(
-              "Coste: 150 💎",
-              style: TextStyle(color: Color(0xFF1CB0F6), fontWeight: FontWeight.bold, fontSize: 18),
-            ),
+            Text("Coste: 150 💎",
+                style: TextStyle(
+                    color: Color(0xFF1CB0F6),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18)),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.white60)),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar",
+                  style: TextStyle(color: Colors.white60))),
           ElevatedButton(
             onPressed: () {
-              bool exito = _userController.comprarVidasConPigmentos();
+              bool ok = _userController.comprarVidasConPigmentos();
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(exito ? "¡Vidas recargadas al máximo!" : "No tienes suficientes pigmentos 💎"),
-                  backgroundColor: exito ? Colors.green : Colors.red,
-                ),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(ok
+                    ? "¡Vidas recargadas al máximo!"
+                    : "No tienes suficientes pigmentos 💎"),
+                backgroundColor: ok ? Colors.green : Colors.red,
+              ));
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF4B4B)),
-            child: const Text("Comprar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF4B4B)),
+            child: const Text("Comprar",
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -670,32 +619,37 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         backgroundColor: const Color(0xFF1E2638),
-        title: const Text(
-          "🎁 Cofre de Recompensa",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold, fontSize: 22),
-        ),
+        title: const Text("🎁 Cofre de Recompensa",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Color(0xFFFFD166),
+                fontWeight: FontWeight.bold,
+                fontSize: 22)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.redeem_rounded, color: Color(0xFFFFD166), size: 80),
+            const Icon(Icons.redeem_rounded,
+                color: Color(0xFFFFD166), size: 80),
             const SizedBox(height: 16),
             const Text(
               "¡Has alcanzado y abierto un cofre en tu camino cromático!",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+              style:
+                  TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                "+150 XP y +50 Pigmentos",
-                style: TextStyle(color: Color(0xFF00C897), fontSize: 18, fontWeight: FontWeight.w900),
-              ),
+              child: const Text("+150 XP y +50 Pigmentos",
+                  style: TextStyle(
+                      color: Color(0xFF00C897),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900)),
             ),
           ],
         ),
@@ -706,10 +660,11 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                 _userController.completarNivel(nivel);
                 Navigator.pop(context);
               },
-              child: const Text(
-                "¡Recibir Recompensa!",
-                style: TextStyle(color: Color(0xFFFFD166), fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              child: const Text("¡Recibir Recompensa!",
+                  style: TextStyle(
+                      color: Color(0xFFFFD166),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
             ),
           )
         ],
@@ -718,113 +673,112 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   }
 }
 
-
-/// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
-class BranchPainter extends CustomPainter {
-  final bool isCenterRow;
-  final bool isLeftUnlocked;
-  final bool isRightUnlocked;
+// ─── CustomPainter: ADN doble hélice pura (Hebras separadas y unidas) ──────────
+class _PathPainter extends CustomPainter {
   final double screenWidth;
+  final int currentLevel;
+  final int totalRows;
 
-  BranchPainter({
-    required this.isCenterRow,
-    required this.isLeftUnlocked,
-    required this.isRightUnlocked,
+  _PathPainter({
     required this.screenWidth,
+    required this.currentLevel,
+    required this.totalRows,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paintBg = Paint()
-      ..color = const Color(0xFF141824).withOpacity(0.5)
-      ..strokeWidth = 10.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final paintLineLeft = Paint()
-      ..color = isLeftUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final paintLineRight = Paint()
-      ..color = isRightUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final double centerX = screenWidth / 2;
-    // La separación debe coincidir con el MainAxisAlignment.spaceEvenly
-    final double leftX = screenWidth * 0.25;
-    final double rightX = screenWidth * 0.75;
-
-    final double startY = 60.0 + (75 / 2); // Centro del botón actual
-    final double endY = 180.0 + 60.0 + (75 / 2); // Centro del botón en la SIGUIENTE fila
-
-    final path1 = Path();
-    final path2 = Path();
-
-    if (isCenterRow) {
-      // De Centro a Izquierda y Derecha (División)
-      path1.moveTo(centerX, startY);
-      path1.cubicTo(centerX, startY + 50, leftX, endY - 50, leftX, endY);
-
-      path2.moveTo(centerX, startY);
-      path2.cubicTo(centerX, startY + 50, rightX, endY - 50, rightX, endY);
-    } else {
-      // De Izquierda y Derecha al Centro (Convergencia)
-      path1.moveTo(leftX, startY);
-      path1.cubicTo(leftX, startY + 50, centerX, endY - 50, centerX, endY);
-
-      path2.moveTo(rightX, startY);
-      path2.cubicTo(rightX, startY + 50, centerX, endY - 50, centerX, endY);
-    }
-
-    // Dibujar sombras sólidas de fondo
-    canvas.drawPath(path1, paintBg);
-    canvas.drawPath(path2, paintBg);
-
-    // Dibujar líneas punteadas principales
-    _drawDashedPath(canvas, path1, paintLineLeft);
-    _drawDashedPath(canvas, path2, paintLineRight);
+    // Dibujamos las dos hebras entrelazadas independientes (izquierda y derecha)
+    _drawStrand(canvas, isLeft: true);
+    _drawStrand(canvas, isLeft: false);
   }
 
-  // Función interna para crear el efecto punteado (Dotted Line)
-  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
-    const double dotSpacing = 14.0;  // Espacio entre puntos
-    double distance = 0.0;
+  void _drawStrand(Canvas canvas, {required bool isLeft}) {
+    final Path path = Path();
+    
+    // Iniciar en el centro del primer nivel (Fila 1)
+    path.moveTo(_strandX(1, isLeft, screenWidth), _rowY(1));
 
-    paint.strokeWidth = 0;
-    paint.style = PaintingStyle.fill;
+    // Conectar fila a fila formando las burbujas/bucles de ADN
+    for (int r = 1; r < totalRows; r++) {
+      final double x1 = _strandX(r, isLeft, screenWidth);
+      final double y1 = _rowY(r);
+      final double x2 = _strandX(r + 1, isLeft, screenWidth);
+      final double y2 = _rowY(r + 1);
+      final double midY = (y1 + y2) / 2;
 
-    final Paint shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
-      ..style = PaintingStyle.fill;
+      path.cubicTo(x1, midY, x2, midY, x2, y2);
+    }
 
-    // Extrae las métricas del path para ir dibujando fragmentos
-    for (ui.PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) {
-        final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
-        if (tangent != null) {
-          canvas.drawCircle(tangent.position + const Offset(0, 2), 4.5, shadowPaint);
-          canvas.drawCircle(tangent.position, 4.5, paint);
+    // Sombra de la hebra
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.black.withOpacity(0.25)
+        ..strokeWidth = 11
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Hebra base
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF2C251C).withOpacity(0.4)
+        ..strokeWidth = 9
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Puntos (nucleótidos) a lo largo del camino
+    _drawDotsOnPath(canvas, path);
+  }
+
+  void _drawDotsOnPath(Canvas canvas, Path path) {
+    const double dotR = 4.2;
+    const double spacing = 16.0;
+    double distance = spacing / 2;
+
+    for (final ui.PathMetric m in path.computeMetrics()) {
+      while (distance < m.length) {
+        final ui.Tangent? t = m.getTangentForOffset(distance);
+        if (t != null) {
+          // Un punto está desbloqueado si su Y es menor/igual al Y del nivel actual alcanzado
+          final double currentYLimit = _nodeY(currentLevel);
+          final bool unlocked = t.position.dy <= (currentYLimit + 10);
+
+          final Color dotColor = unlocked
+              ? const Color(0xFFD4A017)   // Dorado pergamino — completado/activo
+              : const Color(0xFF3E485A);  // Gris azulado — bloqueado
+
+          // Sombra del punto
+          canvas.drawCircle(
+            t.position + const Offset(0, 1.5),
+            dotR,
+            Paint()
+              ..color = Colors.black.withOpacity(0.35)
+              ..style = PaintingStyle.fill,
+          );
+          // Punto principal
+          canvas.drawCircle(
+            t.position,
+            dotR,
+            Paint()
+              ..color = dotColor
+              ..style = PaintingStyle.fill,
+          );
         }
-        distance += dotSpacing;
+        distance += spacing;
       }
-      distance = 0.0; // Resetear para la siguiente curva
+      distance = spacing / 2;
     }
   }
 
   @override
-  bool shouldRepaint(covariant BranchPainter oldDelegate) {
-    return oldDelegate.isCenterRow != isCenterRow ||
-           oldDelegate.screenWidth != screenWidth ||
-           oldDelegate.isLeftUnlocked != isLeftUnlocked ||
-           oldDelegate.isRightUnlocked != isRightUnlocked;
-  }
+  bool shouldRepaint(covariant _PathPainter old) =>
+      old.currentLevel != currentLevel || old.screenWidth != screenWidth;
 }
 
-/// Tooltip animado flotante
+// ─── Tooltip flotante animado ─────────────────────────────────────────────────
 class FloatingTooltip extends StatefulWidget {
   const FloatingTooltip({super.key});
 
@@ -832,63 +786,63 @@ class FloatingTooltip extends StatefulWidget {
   State<FloatingTooltip> createState() => _FloatingTooltipState();
 }
 
-class _FloatingTooltipState extends State<FloatingTooltip> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _FloatingTooltipState extends State<FloatingTooltip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _bounce;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 700),
+    _ctrl = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 750),
     )..repeat(reverse: true);
+    _bounce = Tween<double>(begin: 0, end: -6)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, -_controller.value * 6),
-          child: child,
-        );
-      },
+      animation: _bounce,
+      builder: (_, child) =>
+          Transform.translate(offset: Offset(0, _bounce.value), child: child),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFFFD166),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3)),
               ],
             ),
             child: const Text(
               "¡JUGAR!",
               style: TextStyle(
-                color: Color(0xFF191D2B),
+                color: Color(0xFF3D2200),
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
+                letterSpacing: 0.8,
               ),
             ),
           ),
           CustomPaint(
-            size: const Size(12, 6),
-            painter: TrianglePainter(),
+            size: const Size(14, 7),
+            painter: _TrianglePainter(),
           ),
         ],
       ),
@@ -896,22 +850,21 @@ class _FloatingTooltipState extends State<FloatingTooltip> with SingleTickerProv
   }
 }
 
-class TrianglePainter extends CustomPainter {
+class _TrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    path.moveTo(0, 0);
-    path.lineTo(size.width / 2, size.height);
-    path.lineTo(size.width, 0);
-    path.close();
-
-    canvas.drawPath(path, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width / 2, size.height)
+        ..lineTo(size.width, 0)
+        ..close(),
+      Paint()
+        ..color = const Color(0xFFFFD166)
+        ..style = PaintingStyle.fill,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant TrianglePainter oldDelegate) => false;
-} 
+  bool shouldRepaint(covariant _TrianglePainter _) => false;
+}

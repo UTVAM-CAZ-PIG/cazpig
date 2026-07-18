@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
-                          controller: _passCtrl, // Use _passCtrl consistently
+                          controller: _passwordController,
                           obscureText: !_showPassword,
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                           decoration: _inputDecoration('Contraseña', Icons.lock_outline).copyWith(
@@ -195,8 +195,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         GameButton(
                           backgroundColor: const Color(0xFF6C5CE7),
                           shadowColor: const Color(0xFF4A3DB5),
-                          onTap: _loading ? null : _intentarLogin, // Use _loading consistently
-                          child: _loading
+                          onTap: _isLoading ? null : _intentarLogin,
+                          child: _isLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
