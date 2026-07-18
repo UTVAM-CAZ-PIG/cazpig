@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
+import '../widgets/app_navigation_bar.dart'; // Asegúrate de que este import coincida con la ruta de tu barra
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
@@ -32,10 +33,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     super.initState();
     // Calcular en qué fila está el nivel actual
     final activeLevel = _userController.currentUser.currentLevelReached;
-    final int activeRow = _getRowForLevel(activeLevel);
-    
-    // Altura aproximada de cada fila es 180
-    final double initialOffset = max(0.0, (activeRow - 1) * 180.0);
+    final double initialOffset = max(0.0, (activeLevel - 2) * 190.0);
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
   }
 
@@ -62,6 +60,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 
         return Stack(
           children: [
+            // 1. FONDO (Solo la imagen pergamino)
             Positioned.fill(
               child: Image.asset(
                 'assets/imagenes/fondo.jpeg',
@@ -84,99 +83,194 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                 ),
               ),
             ),
+            
+            // 2. LA PANTALLA
             Scaffold(
-              backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
+              backgroundColor: Colors.transparent,
+              extendBody: true, // Hace que los niveles pasen por detrás elegantemente
+              
+              // 👈 AQUÍ SE QUEDA LA BARRA FIXA ABAJO
+              bottomNavigationBar: AppNavigationBar(
+                currentIndex: 1,
+                onTap: (index) {
+                  print("Click en pestaña: $index");
+                },
+              ),
+              
               body: LayoutBuilder(
                 builder: (context, constraints) {
-              final double screenWidth = constraints.maxWidth;
-              
-              // Para 100 niveles en patrón 1, 2, 1, 2... necesitamos 67 filas + 1 Header
-              const int totalRows = 68;
+                  final double screenWidth = constraints.maxWidth;
 
-              return ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 100, top: 20),
-                itemCount: totalRows,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildSectionHeader();
+                  double getXOffset(int index) {
+                    return screenWidth / 2 + sin(index * 0.8) * (screenWidth * 0.23);
                   }
 
-                  final int rowIndex = index - 1; // Fila 0, 1, 2...
-                  final bool isCenterRow = rowIndex % 2 == 0;
-                  
-                  // Calcular qué niveles van en esta fila
-                  List<int> levelsInRow = [];
-                  if (isCenterRow) {
-                    int lvl = (rowIndex ~/ 2) * 3 + 1;
-                    if (lvl <= 100) levelsInRow.add(lvl);
-                  } else {
-                    int lvl1 = (rowIndex ~/ 2) * 3 + 2;
-                    int lvl2 = (rowIndex ~/ 2) * 3 + 3;
-                    if (lvl1 <= 100) levelsInRow.add(lvl1);
-                    if (lvl2 <= 100) levelsInRow.add(lvl2);
-                  }
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(bottom: 140), // Espacio para que el nivel 100 no quede tapado
+                    itemCount: 101,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _buildSectionHeader(); // Tu Header superior normal
+                      }
 
+                      final levelNumber = index; // Nivel 1 a 100
+                      final isCompleted = levelNumber < currentLevel;
+                      final isActive = levelNumber == currentLevel;
+                      final isLocked = levelNumber > currentLevel;
+                      final bool isChest = levelNumber % 5 == 0; // Cada 5 niveles hay un cofre de regalo
 
-                  bool isLeftUnlocked=false;
-                  bool isRightUnlocked=false;
+                      // Determinar el color base según el tipo de nivel
+                      final int levelType = levelNumber % 3;
+                      Color levelColor = Colors.teal;
+                      Color levelShadow = Colors.teal.shade800;
 
-                  if (isCenterRow){
-                   if (levelsInRow.isNotEmpty){
-                    int centerLevel = levelsInRow[0];
-                    int leftTarget = centerLevel +1;
-                    int rightTarget = centerLevel +2;
+                      if (levelType == 1) {
+                        levelColor = const Color(0xFF00C897); // Verde azulado brillante
+                        levelShadow = const Color(0xFF009673);
+                      } else if (levelType == 2) {
+                        levelColor = const Color(0xFFFF9F1C); // Naranja brillante
+                        levelShadow = const Color(0xFFCC7F16);
+                      } else {
+                        levelColor = const Color(0xFF9B5DE5); // Morado neón
+                        levelShadow = const Color(0xFF7B4AB5);
+                      }
 
-                    isLeftUnlocked = currentLevel >= leftTarget;
-                    isRightUnlocked = currentLevel >= rightTarget;
-                   }
-                  }else{
-                    if(levelsInRow.isNotEmpty){
-                      int leftLevel = levelsInRow[0];
-                      int centerTarget = leftLevel +2;
+                      if (isChest) {
+                        levelColor = const Color(0xFFFFD166); // Oro/Dorado para el cofre
+                        levelShadow = const Color(0xFFD4AA3F);
+                      }
 
-                      isLeftUnlocked = currentLevel >= centerTarget;
-                      isRightUnlocked = currentLevel >= centerTarget;
-                      
+                      // Si está completado, color verde esmeralda brillante
+                      if (isCompleted && !isChest) {
+                        levelColor = const Color(0xFF58CC02);
+                        levelShadow = const Color(0xFF46A302);
+                      }
 
-                    }
-                  }
+                      // Si está bloqueado, color gris
+                      if (isLocked) {
+                        levelColor = const Color(0xFF4E586E);
+                        levelShadow = const Color(0xFF343B4A);
+                      }
 
-                  return SizedBox(
-                    height: 180, // Altura fija por bloque
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // 1. Dibujar líneas de conexión hacia la SIGUIENTE fila
-                        if (levelsInRow.isNotEmpty && levelsInRow.last < 100)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: BranchPainter(
-                                  isCenterRow: isCenterRow,
-                                  screenWidth: screenWidth,
-                                  // Las líneas brillan si el nivel central de la fila ya fue superado
-                                  isLeftUnlocked:isLeftUnlocked,
-                                  isRightUnlocked:isRightUnlocked,
-                                ),
+                      final double currentX = getXOffset(levelNumber);
+
+                      return SizedBox(
+                        height: 190, // Altura uniforme controlada para evitar cortes
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Elemento interactivo en 3D (Nivel o Cofre)
+                            Positioned(
+                              left: currentX - 40, // Centrado para un botón de 80px de ancho
+                              top: 25,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Estructura Neumórfica 3D (Estilo Duolingo/Gaming)
+                                  SizedBox(
+                                    width: 80,
+                                    height: 86,
+                                    child: Stack(
+                                      children: [
+                                        // Capa Inferior (Sombra tridimensional del botón)
+                                        Positioned(
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 80,
+                                            height: 76,
+                                            decoration: BoxDecoration(
+                                              color: levelShadow,
+                                              shape: isChest ? BoxShape.rectangle : BoxShape.circle,
+                                              borderRadius: isChest ? BorderRadius.circular(20) : null,
+                                            ),
+                                          ),
+                                        ),
+                                        // Capa Superior (El frente interactivo del botón)
+                                        Positioned(
+                                          top: 0,
+                                          child: GameButton(
+                                            width: 80,
+                                            height: 76,
+                                            borderRadius: isChest ? 20 : 38,
+                                            backgroundColor: levelColor,
+                                            shadowColor: Colors.transparent, // Anulamos sombra nativa
+                                            onTap: isChest 
+                                                ? () => _abrirCofre(context, levelNumber) 
+                                                : () => _iniciarDesafiodeNivel(context, levelNumber),
+                                            enabled: !isLocked,
+                                            child: isChest
+                                                ? Icon(
+                                                    isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+                                                    color: isLocked ? Colors.white60 : const Color(0xFF191D2B),
+                                                    size: 32,
+                                                  )
+                                                : Container(
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      gradient: RadialGradient(
+                                                        colors: isLocked
+                                                            ? [const Color(0xFF5A667D), const Color(0xFF343B4A)]
+                                                            : [levelColor.withOpacity(0.4), levelColor],
+                                                        center: const Alignment(0.0, -0.2),
+                                                        radius: 0.8,
+                                                      ),
+                                                    ),
+                                                    child: Center(
+                                                      child: Text(
+                                                        '$levelNumber',
+                                                        style: const TextStyle(
+                                                          fontSize: 26,
+                                                          fontWeight: FontWeight.w900,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Tooltip flotante encima si es el nivel activo
+                                  if (isActive)
+                                    const Positioned(
+                                      top: -45,
+                                      child: FloatingTooltip(),
+                                    ),
+
+                                  // Tres estrellas debajo del nivel
+                                  if (!isChest)
+                                    Positioned(
+                                      bottom: -22,
+                                      child: _buildStars(isCompleted),
+                                    ),
+
+                                  // Checkmark si está completado
+                                  if (isCompleted && !isChest)
+                                    const Positioned(
+                                      bottom: 5,
+                                      right: -2,
+                                      child: CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Color(0xFF58CC02), // Verde vibrante
+                                        child: Icon(
+                                          Icons.check,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          ),
-
-                        // 2. Colocar los botones de los niveles
-                        Row(
-                          mainAxisAlignment: isCenterRow 
-                              ? MainAxisAlignment.center 
-                              : MainAxisAlignment.spaceEvenly,
-                          children: levelsInRow.map((levelNumber) {
-                            return _buildLevelNode(levelNumber, currentLevel);
-                          }).toList(),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
-                },
-              );
                 },
               ),
             ),
@@ -386,7 +480,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         children: [
           Expanded(
             child: Column(
@@ -819,5 +913,5 @@ class TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+  bool shouldRepaint(covariant TrianglePainter oldDelegate) => false;
+} 
