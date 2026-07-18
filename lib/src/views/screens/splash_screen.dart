@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
               context,
               MaterialPageRoute(builder: (context) => const RegistroScreen()),
             );
-          } else { // This 'else' corresponds to the 'if (user.email == ...)'
+          } else {
             final firebaseUser = FirebaseAuth.instance.currentUser;
 
             if (firebaseUser != null) {

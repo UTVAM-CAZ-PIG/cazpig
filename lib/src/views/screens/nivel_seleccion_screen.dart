@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
-import '../widgets/animated_background.dart';
+import '../widgets/app_navigation_bar.dart'; // Asegúrate de que este import coincida con la ruta de tu barra
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
@@ -32,10 +32,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     super.initState();
     // Calcular en qué fila está el nivel actual
     final activeLevel = _userController.currentUser.currentLevelReached;
-    final int activeRow = _getRowForLevel(activeLevel);
-    
-    // Altura aproximada de cada fila es 180
-    final double initialOffset = max(0.0, (activeRow - 1) * 180.0);
+    final double initialOffset = max(0.0, (activeLevel - 2) * 190.0);
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
   }
 
@@ -62,6 +59,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 
         return Stack(
           children: [
+            // 1. FONDO (Solo la imagen pergamino)
             Positioned.fill(
               child: Image.asset(
                 'assets/imagenes/fondo.jpeg',
@@ -70,99 +68,194 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             const Positioned.fill(
               child: AnimatedBackground(child: SizedBox.shrink()),
             ),
+            
+            // 2. LA PANTALLA
             Scaffold(
-              backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
+              backgroundColor: Colors.transparent,
+              extendBody: true, // Hace que los niveles pasen por detrás elegantemente
+              
+              // 👈 AQUÍ SE QUEDA LA BARRA FIXA ABAJO
+              bottomNavigationBar: AppNavigationBar(
+                currentIndex: 1,
+                onTap: (index) {
+                  print("Click en pestaña: $index");
+                },
+              ),
+              
               body: LayoutBuilder(
                 builder: (context, constraints) {
-              final double screenWidth = constraints.maxWidth;
-              
-              // Para 100 niveles en patrón 1, 2, 1, 2... necesitamos 67 filas + 1 Header
-              const int totalRows = 68;
+                  final double screenWidth = constraints.maxWidth;
 
-              return ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 100, top: 20),
-                itemCount: totalRows,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildSectionHeader();
+                  double getXOffset(int index) {
+                    return screenWidth / 2 + sin(index * 0.8) * (screenWidth * 0.23);
                   }
 
-                  final int rowIndex = index - 1; // Fila 0, 1, 2...
-                  final bool isCenterRow = rowIndex % 2 == 0;
-                  
-                  // Calcular qué niveles van en esta fila
-                  List<int> levelsInRow = [];
-                  if (isCenterRow) {
-                    int lvl = (rowIndex ~/ 2) * 3 + 1;
-                    if (lvl <= 100) levelsInRow.add(lvl);
-                  } else {
-                    int lvl1 = (rowIndex ~/ 2) * 3 + 2;
-                    int lvl2 = (rowIndex ~/ 2) * 3 + 3;
-                    if (lvl1 <= 100) levelsInRow.add(lvl1);
-                    if (lvl2 <= 100) levelsInRow.add(lvl2);
-                  }
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(bottom: 140), // Espacio para que el nivel 100 no quede tapado
+                    itemCount: 101,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _buildSectionHeader(); // Tu Header superior normal
+                      }
 
+                      final levelNumber = index; // Nivel 1 a 100
+                      final isCompleted = levelNumber < currentLevel;
+                      final isActive = levelNumber == currentLevel;
+                      final isLocked = levelNumber > currentLevel;
+                      final bool isChest = levelNumber % 5 == 0; // Cada 5 niveles hay un cofre de regalo
 
-                  bool isLeftUnlocked=false;
-                  bool isRightUnlocked=false;
+                      // Determinar el color base según el tipo de nivel
+                      final int levelType = levelNumber % 3;
+                      Color levelColor = Colors.teal;
+                      Color levelShadow = Colors.teal.shade800;
 
-                  if (isCenterRow){
-                   if (levelsInRow.isNotEmpty){
-                    int centerLevel = levelsInRow[0];
-                    int leftTarget = centerLevel +1;
-                    int rightTarget = centerLevel +2;
+                      if (levelType == 1) {
+                        levelColor = const Color(0xFF00C897); // Verde azulado brillante
+                        levelShadow = const Color(0xFF009673);
+                      } else if (levelType == 2) {
+                        levelColor = const Color(0xFFFF9F1C); // Naranja brillante
+                        levelShadow = const Color(0xFFCC7F16);
+                      } else {
+                        levelColor = const Color(0xFF9B5DE5); // Morado neón
+                        levelShadow = const Color(0xFF7B4AB5);
+                      }
 
-                    isLeftUnlocked = currentLevel >= leftTarget;
-                    isRightUnlocked = currentLevel >= rightTarget;
-                   }
-                  }else{
-                    if(levelsInRow.isNotEmpty){
-                      int leftLevel = levelsInRow[0];
-                      int centerTarget = leftLevel +2;
+                      if (isChest) {
+                        levelColor = const Color(0xFFFFD166); // Oro/Dorado para el cofre
+                        levelShadow = const Color(0xFFD4AA3F);
+                      }
 
-                      isLeftUnlocked = currentLevel >= centerTarget;
-                      isRightUnlocked = currentLevel >= centerTarget;
-                      
+                      // Si está completado, color verde esmeralda brillante
+                      if (isCompleted && !isChest) {
+                        levelColor = const Color(0xFF58CC02);
+                        levelShadow = const Color(0xFF46A302);
+                      }
 
-                    }
-                  }
+                      // Si está bloqueado, color gris
+                      if (isLocked) {
+                        levelColor = const Color(0xFF4E586E);
+                        levelShadow = const Color(0xFF343B4A);
+                      }
 
-                  return SizedBox(
-                    height: 180, // Altura fija por bloque
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // 1. Dibujar líneas de conexión hacia la SIGUIENTE fila
-                        if (levelsInRow.isNotEmpty && levelsInRow.last < 100)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: BranchPainter(
-                                  isCenterRow: isCenterRow,
-                                  screenWidth: screenWidth,
-                                  // Las líneas brillan si el nivel central de la fila ya fue superado
-                                  isLeftUnlocked:isLeftUnlocked,
-                                  isRightUnlocked:isRightUnlocked,
-                                ),
+                      final double currentX = getXOffset(levelNumber);
+
+                      return SizedBox(
+                        height: 190, // Altura uniforme controlada para evitar cortes
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Elemento interactivo en 3D (Nivel o Cofre)
+                            Positioned(
+                              left: currentX - 40, // Centrado para un botón de 80px de ancho
+                              top: 25,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Estructura Neumórfica 3D (Estilo Duolingo/Gaming)
+                                  SizedBox(
+                                    width: 80,
+                                    height: 86,
+                                    child: Stack(
+                                      children: [
+                                        // Capa Inferior (Sombra tridimensional del botón)
+                                        Positioned(
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 80,
+                                            height: 76,
+                                            decoration: BoxDecoration(
+                                              color: levelShadow,
+                                              shape: isChest ? BoxShape.rectangle : BoxShape.circle,
+                                              borderRadius: isChest ? BorderRadius.circular(20) : null,
+                                            ),
+                                          ),
+                                        ),
+                                        // Capa Superior (El frente interactivo del botón)
+                                        Positioned(
+                                          top: 0,
+                                          child: GameButton(
+                                            width: 80,
+                                            height: 76,
+                                            borderRadius: isChest ? 20 : 38,
+                                            backgroundColor: levelColor,
+                                            shadowColor: Colors.transparent, // Anulamos sombra nativa
+                                            onTap: isChest 
+                                                ? () => _abrirCofre(context, levelNumber) 
+                                                : () => _iniciarDesafiodeNivel(context, levelNumber),
+                                            enabled: !isLocked,
+                                            child: isChest
+                                                ? Icon(
+                                                    isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+                                                    color: isLocked ? Colors.white60 : const Color(0xFF191D2B),
+                                                    size: 32,
+                                                  )
+                                                : Container(
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      gradient: RadialGradient(
+                                                        colors: isLocked
+                                                            ? [const Color(0xFF5A667D), const Color(0xFF343B4A)]
+                                                            : [levelColor.withOpacity(0.4), levelColor],
+                                                        center: const Alignment(0.0, -0.2),
+                                                        radius: 0.8,
+                                                      ),
+                                                    ),
+                                                    child: Center(
+                                                      child: Text(
+                                                        '$levelNumber',
+                                                        style: const TextStyle(
+                                                          fontSize: 26,
+                                                          fontWeight: FontWeight.w900,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Tooltip flotante encima si es el nivel activo
+                                  if (isActive)
+                                    const Positioned(
+                                      top: -45,
+                                      child: FloatingTooltip(),
+                                    ),
+
+                                  // Tres estrellas debajo del nivel
+                                  if (!isChest)
+                                    Positioned(
+                                      bottom: -22,
+                                      child: _buildStars(isCompleted),
+                                    ),
+
+                                  // Checkmark si está completado
+                                  if (isCompleted && !isChest)
+                                    const Positioned(
+                                      bottom: 5,
+                                      right: -2,
+                                      child: CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Color(0xFF58CC02), // Verde vibrante
+                                        child: Icon(
+                                          Icons.check,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          ),
-
-                        // 2. Colocar los botones de los niveles
-                        Row(
-                          mainAxisAlignment: isCenterRow 
-                              ? MainAxisAlignment.center 
-                              : MainAxisAlignment.spaceEvenly,
-                          children: levelsInRow.map((levelNumber) {
-                            return _buildLevelNode(levelNumber, currentLevel);
-                          }).toList(),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
-                },
-              );
                 },
               ),
             ),
@@ -172,151 +265,25 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     );
   }
 
-  // --- El resto de tus métodos siguen igual (_buildSectionHeader, _mostrarCompraVidasDialog, etc.) ---
-  // Añado aquí la lógica del nodo limpio para no saturar el build
-  
-  Widget _buildLevelNode(int levelNumber, int currentLevel) {
-    final isCompleted = levelNumber < currentLevel;
-    final isActive = levelNumber == currentLevel;
-    final isLocked = levelNumber > currentLevel;
-    final bool isChest = levelNumber % 5 == 0;
-
-    // Colores
-    final int levelType = levelNumber % 3;
-    Color levelColor = Colors.teal;
-    
-
-    if (levelType == 1) {
-      levelColor = const Color(0xFF00C897);
-    } else if (levelType == 2) {
-      levelColor = const Color(0xFFFF9F1C);
-    } else {
- levelColor = const Color(0xFF9B5DE5);
-     
-    }
-
-    if (isChest) {
-      levelColor = const Color(0xFFFFD166); 
-    }
-    if (isCompleted && !isChest) {
-      final int colorCompletado = levelNumber % 4;
-
-      if (colorCompletado == 0) {
-        levelColor = const Color(0xFF9E4747); // Azul cian vibrante pero suave
-      } else if (colorCompletado == 1) {
-        levelColor = const Color(0xFF4A708B); // Rosa sandía / fucsia claro
-      } else if (colorCompletado == 2) {
-        levelColor = const Color(0xFF5A7247); // Verde menta fresco (no neón)
-      } else {
-        levelColor = const Color(0xFF8B6375); // Violeta brillante
-      }
-    }
-    if (isLocked) {
-      levelColor = const Color(0xFF4E586E); 
-    }
-
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 25), // Espacio para tooltips
-          child:GestureDetector(
-           onTap: isLocked
-           ? null
-           :(isChest ? () => _abrirCofre(context, levelNumber) : () => _iniciarDesafiodeNivel(context, levelNumber)),
-           child:SizedBox(
-            width:150,
-            height:150,
-           child: isChest
-           ? Icon(isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
-           color:isLocked ? Colors.white60 : const Color(0xFF191D2B),
-           size:40,
-           )
-           :Stack(
-            alignment:Alignment.center,
-            children:[
-              ColorFiltered(colorFilter: ColorFilter.mode(levelColor,BlendMode.srcIn,),
-              child:Image.asset(
-                'assets/imagenes/sello.png',
-                width:150,
-                height:150,
-                fit:BoxFit.contain,
-              ),
-              ),
-              Text(
-                '$levelNumber',
-                style:TextStyle(
-                  fontSize:42,
-                  fontWeight:FontWeight.bold,
-                  color:isLocked ? Colors.white60 : Colors.white,
-                  shadows:[
-                    Shadow(
-                      color:Colors.black.withOpacity(0.5),
-                      blurRadius:4,
-                      offset:const Offset(0,2),
-                    )
-                  ],
-                ),
-              ),
-            ],
-
-           ),
-          ),
-        ), // 
-        ),
-
-        if (isActive)
-          const Positioned(top: -25, child: FloatingTooltip()),
-        if (!isChest)
-          Positioned(
-            bottom: isCompleted ? -15 : -12,
-            child: _buildStars(isCompleted),
-          ),
-        if (isCompleted && !isChest)
-          const Positioned(
-            bottom: 5,
-            right: -5,
-            child: CircleAvatar(
-              radius: 12,
-              backgroundColor: Color(0xFF58CC02),
-              child: Icon(Icons.check, size: 14, color: Colors.white),
-            ),
-          ),
-        if (isLocked)
-          const Positioned(
-            bottom: 5,
-            right: -5,
-            child: CircleAvatar(
-              radius: 11,
-              backgroundColor: Color(0xFF2C3545),
-              child: Icon(Icons.lock, size: 11, color: Colors.white60),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader() {
+ Widget _buildSectionHeader() {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: const Color(0xFF1E1E2A).withOpacity(0.85), // Verde vibrante
-        borderRadius: BorderRadius.circular(30),
-        border:Border.all(
-          color:const Color(0xFFFFD166).withOpacity(0.5),
-          width:2
+        gradient: const LinearGradient(
+          colors: [Color(0xFF00C897), Color(0xFF009673)], 
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         children: [
           Expanded(
             child: Column(
@@ -331,15 +298,14 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                child:const Text(
                   "SECCIÓN 1 · UNIDAD 1",
                   style: TextStyle(
-                    color: Color(0xFFFFD166),
-                    fontSize: 11,
+                    color: Colors.white70, // 👈 Corregido aquí (blanco con 70% opacidad)
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
                   ),
                 ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 6),
+                Text(
                   "Ruta de los Pigmentos",
                   style: TextStyle(
                     color: Colors.white,
@@ -347,27 +313,20 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 6),
                 Text(
                   "Supera mezclas, branding y degradados infinitos para coronarte maestro.",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                    height: 1.4,
+                    color: Colors.white, // 👈 Corregido aquí (blanco sólido)
+                    fontSize: 13,
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Container(
-          padding:const EdgeInsets.all(12),
-          decoration:const BoxDecoration(
-            color:Color(0xFFFFD166),
-            shape:BoxShape.circle,
-          ),
-          child:const Icon(Icons.palette_rounded,color:Color(0xFF1E1E2A),size:36)
-          ),
+          SizedBox(width: 16),
+          Icon(Icons.palette_rounded, color: Colors.white, size: 45),
         ],
       ),
     );
@@ -380,10 +339,9 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 1.0),
           child: Icon(
-            Icons.star_rounded,
-            size: 22,
-            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF4A5568).withOpacity(0.7),
-            
+            Icons.star,
+            size: 14,
+            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF343B4A),
           ),
         );
       }),
@@ -539,116 +497,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   }
 }
 
-
-/// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
-class PathPainter extends CustomPainter {
-  final double x1;
-  final double x2;
-  final bool unlocked;
-  final Color activeColor;
-
-  PathPainter({
-    required this.x1,
-    required this.x2,
-    required this.unlocked,
-    required this.activeColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintBg = Paint()
-      ..color = const Color(0xFF141824).withOpacity(0.5)
-      ..strokeWidth = 10.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final paintLineLeft = Paint()
-      ..color = isLeftUnlocked ? const Color(0XFFD4AF37): const Color(0xFF384256)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-      final paintLineRight = Paint()
-      ..color = isRightUnlocked ? const Color(0XFFD4AF37) : const Color(0xFF384256)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-
-      final double centerX = screenWidth / 2;
-    // La separación debe coincidir con el MainAxisAlignment.spaceEvenly
-    final double leftX = screenWidth * 0.25; 
-    final double rightX = screenWidth * 0.75;
-    
-    final double startY = 60.0 + (75 / 2); // Centro del botón actual
-    final double endY = 180.0 + 60.0 + (75 / 2); // Centro del botón en la SIGUIENTE fila
-
-    final path1 = Path();
-    final path2 = Path();
-
-   
-    if (isCenterRow) {
-      // De Centro a Izquierda y Derecha (División)
-      path1.moveTo(centerX, startY);
-      path1.cubicTo(centerX, startY + 50, leftX, endY - 50, leftX, endY);
-
-      path2.moveTo(centerX, startY);
-      path2.cubicTo(centerX, startY + 50, rightX, endY - 50, rightX, endY);
-    } else {
-      // De Izquierda y Derecha al Centro (Convergencia)
-      path1.moveTo(leftX, startY);
-      path1.cubicTo(leftX, startY + 50, centerX, endY - 50, centerX, endY);
-
-      path2.moveTo(rightX, startY);
-      path2.cubicTo(rightX, startY + 50, centerX, endY - 50, centerX, endY);
-    }
-
-    // Dibujar sombras sólidas de fondo
-    canvas.drawPath(path1, paintBg);
-    canvas.drawPath(path2, paintBg);
-
-    // Dibujar líneas punteadas principales
-    _drawDashedPath(canvas, path1, paintLineLeft);
-    _drawDashedPath(canvas, path2, paintLineRight);
-  }
-
-  // Función interna para crear el efecto punteado (Dotted Line)
-  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
-    const double dotSpacing = 14.0;  // Espacio entre puntos
-    double distance = 0.0;
-
-    paint.strokeWidth = 0;
-    paint.style = PaintingStyle.fill;
-
-    final Paint shadowPaint = Paint()
-    ..color = Colors.black.withOpacity(0.3)
-    ..style = PaintingStyle.fill;
-
-    // Extrae las métricas del path para ir dibujando fragmentos
-    for (ui.PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) {
-        final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
-        if(tangent !=null){ 
-          canvas.drawCircle(tangent.position + const Offset(0,2),4.5,shadowPaint);
-
-          canvas.drawCircle(tangent.position,4.5,paint);
-        }
-        distance += dotSpacing;
-      }
-      distance = 0.0; // Resetear para la siguiente curva
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant BranchPainter oldDelegate) {
-    return oldDelegate.isCenterRow != isCenterRow ||
-           oldDelegate.screenWidth != screenWidth ||
-           oldDelegate.isLeftUnlocked != isLeftUnlocked ||
-           oldDelegate.isRightUnlocked != isRightUnlocked;
-  }
-}
-
-/// Tooltip animado flotante
+// ==================== COMPONENTE: TOOLTIP FLOTANTE ANIMADO ====================
 class FloatingTooltip extends StatefulWidget {
   const FloatingTooltip({super.key});
 
@@ -737,5 +586,5 @@ class TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+  bool shouldRepaint(covariant TrianglePainter oldDelegate) => false;
+} 
