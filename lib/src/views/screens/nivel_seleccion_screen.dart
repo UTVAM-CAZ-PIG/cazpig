@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
+import '../widgets/animated_background.dart';
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
 import 'gameplay/nivel4_screen.dart';
+import 'gameplay/nivel5_screen.dart';
+import 'gameplay/nivel6_screen.dart';
+import 'gameplay/nivel7_screen.dart';
+import 'gameplay/nivel8_screen.dart';
+import 'gameplay/nivel9_screen.dart';
+import 'gameplay/nivel10_screen.dart';
+import 'gameplay/nivel11_screen.dart';
+import 'gameplay/nivel12_screen.dart';
 
 class NivelSeleccionScreen extends StatefulWidget {
   const NivelSeleccionScreen({super.key});
@@ -21,6 +30,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   @override
   void initState() {
     super.initState();
+    _userController.verificarYRegenerarVidas();
     // Scroll inicial automático al nivel activo del usuario (+1 para compensar el header)
     final activeLevel = _userController.currentUser.currentLevelReached;
     final double initialOffset = max(0.0, (activeLevel - 2) * 140.0);
@@ -42,13 +52,8 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 
         return Stack(
           children: [
-            Positioned.fill(
-              child: Container(
-                color: const Color.fromARGB(255, 18, 17, 17),
-                child: CustomPaint(
-                  painter: FondoLiquidoPainter(),
-                ),
-              ),
+            const Positioned.fill(
+              child: AnimatedBackground(child: SizedBox.shrink()),
             ),
             Scaffold(
               backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
@@ -77,20 +82,47 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                   final isLocked = levelNumber > currentLevel;
                   final bool isChest = levelNumber % 5 == 0; // Cada 5 niveles hay un cofre de regalo
 
-                  // Determinar el color base según el tipo de nivel
-                  final int levelType = levelNumber % 3;
+                  // Determinar el color base según el tipo de nivel (rotación mod 12)
+                  final int levelType = levelNumber % 12;
                   Color levelColor = Colors.teal;
                   Color levelShadow = Colors.teal.shade800;
 
                   if (levelType == 1) {
-                    levelColor = const Color(0xFF00C897); // Verde azulado brillante
+                    levelColor = const Color(0xFF00C897); // Mezclas: Verde azulado brillante
                     levelShadow = const Color(0xFF009673);
                   } else if (levelType == 2) {
-                    levelColor = const Color(0xFFFF9F1C); // Naranja brillante
+                    levelColor = const Color(0xFFFF9F1C); // Branding: Naranja brillante
                     levelShadow = const Color(0xFFCC7F16);
-                  } else {
-                    levelColor = const Color(0xFF9B5DE5); // Morado neón
+                  } else if (levelType == 3) {
+                    levelColor = const Color(0xFF9B5DE5); // Degradados: Morado neón
                     levelShadow = const Color(0xFF7B4AB5);
+                  } else if (levelType == 4) {
+                    levelColor = const Color(0xFF00B4D8); // Contraste: Celeste neón
+                    levelShadow = const Color(0xFF0077B6);
+                  } else if (levelType == 5) {
+                    levelColor = const Color(0xFFFF70A6); // Armonías: Rosa neón
+                    levelShadow = const Color(0xFFCC5985);
+                  } else if (levelType == 6) {
+                    levelColor = const Color(0xFFA5D6A7); // Daltonismo: Verde menta
+                    levelShadow = const Color(0xFF84AB85);
+                  } else if (levelType == 7) {
+                    levelColor = const Color(0xFFFFE066); // RGB: Amarillo brillante
+                    levelShadow = const Color(0xFFCCB352);
+                  } else if (levelType == 8) {
+                    levelColor = const Color(0xFFE53935); // Temperatura: Rojo neón
+                    levelShadow = const Color(0xFFB32C2A);
+                  } else if (levelType == 9) {
+                    levelColor = const Color(0xFFD81B60); // HEX: Fucsia neón
+                    levelShadow = const Color(0xFFB0164E);
+                  } else if (levelType == 10) {
+                    levelColor = const Color(0xFF8E24AA); // Ilusión Óptica: Morado oscuro neón
+                    levelShadow = const Color(0xFF6A1B80);
+                  } else if (levelType == 11) {
+                    levelColor = const Color(0xFF00E5FF); // Atmósferas: Cian eléctrico
+                    levelShadow = const Color(0xFF00B2C4);
+                  } else {
+                    levelColor = const Color(0xFF76FF03); // Saturación: Verde lima neón
+                    levelShadow = const Color(0xFF5CC702);
                   }
 
                   if (isChest) {
@@ -346,7 +378,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     }
 
     Widget pantallaDestino;
-    int tipo = nivel % 4;
+    int tipo = nivel % 12;
 
     if (tipo == 1) {
       pantallaDestino = Nivel1Screen(nivelInicial: nivel);
@@ -354,14 +386,32 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       pantallaDestino = Nivel2Screen(nivelInicial: nivel);
     } else if (tipo == 3) {
       pantallaDestino = Nivel3Screen(nivelInicial: nivel);
-    } else {
+    } else if (tipo == 4) {
       pantallaDestino = Nivel4Screen(nivelInicial: nivel);
+    } else if (tipo == 5) {
+      pantallaDestino = Nivel5Screen(nivelInicial: nivel);
+    } else if (tipo == 6) {
+      pantallaDestino = Nivel6Screen(nivelInicial: nivel);
+    } else if (tipo == 7) {
+      pantallaDestino = Nivel7Screen(nivelInicial: nivel);
+    } else if (tipo == 8) {
+      pantallaDestino = Nivel8Screen(nivelInicial: nivel);
+    } else if (tipo == 9) {
+      pantallaDestino = Nivel9Screen(nivelInicial: nivel);
+    } else if (tipo == 10) {
+      pantallaDestino = Nivel10Screen(nivelInicial: nivel);
+    } else if (tipo == 11) {
+      pantallaDestino = Nivel11Screen(nivelInicial: nivel);
+    } else {
+      pantallaDestino = Nivel12Screen(nivelInicial: nivel);
     }
 
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => pantallaDestino),
-    );
+    ).then((_) {
+      _userController.verificarYRegenerarVidas();
+    });
   }
 
   void _mostrarCompraVidasDialog(BuildContext context) {
@@ -470,45 +520,6 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   }
 }
 
-class FondoLiquidoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    void dibujarParticula(double x, double y, double radio, Color color, [double glowSpread = 3.0]) {
-      final paintGlow = Paint()
-        ..color = color.withOpacity(0.4) // Brillo sutil
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowSpread);
-
-      final paintCore = Paint()..color = color.withOpacity(0.9);
-
-      canvas.drawCircle(Offset(x, y), radio + glowSpread, paintGlow);
-      canvas.drawCircle(Offset(x, y), radio, paintCore);
-    }
-
-    dibujarParticula(size.width * 0.15, size.height * 0.10, 4.0, Colors.cyanAccent);
-    dibujarParticula(size.width * 0.85, size.height * 0.25, 2.5, Colors.cyan);
-    dibujarParticula(size.width * 0.50, size.height * 0.90, 3.5, Colors.cyanAccent);
-    dibujarParticula(size.width * 0.10, size.height * 0.60, 2.0, const Color(0xFF00C8D2));
-
-    dibujarParticula(size.width * 0.75, size.height * 0.70, 5.0, Colors.amber, 8.0);
-    dibujarParticula(size.width * 0.35, size.height * 0.40, 2.0, Colors.amberAccent);
-    dibujarParticula(size.width * 0.90, size.height * 0.85, 3.0, Colors.orangeAccent);
-    dibujarParticula(size.width * 0.45, size.height * 0.15, 2.0, Colors.amber);
-
-    dibujarParticula(size.width * 0.20, size.height * 0.80, 4.5, Colors.pinkAccent);
-    dibujarParticula(size.width * 0.80, size.height * 0.15, 3.0, const Color(0xFFD63384));
-    dibujarParticula(size.width * 0.65, size.height * 0.55, 2.5, Colors.pink);
-    dibujarParticula(size.width * 0.30, size.height * 0.90, 1.5, Colors.pinkAccent);
-
-    dibujarParticula(size.width * 0.55, size.height * 0.30, 4.0, Colors.deepPurpleAccent);
-    dibujarParticula(size.width * 0.05, size.height * 0.35, 3.0, Colors.purpleAccent);
-    dibujarParticula(size.width * 0.70, size.height * 0.95, 2.0, Colors.purple);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
 
 /// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
 class PathPainter extends CustomPainter {
