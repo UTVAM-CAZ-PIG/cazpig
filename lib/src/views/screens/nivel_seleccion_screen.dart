@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:ui' as ui;
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
 import '../widgets/app_navigation_bar.dart'; // Asegúrate de que este import coincida con la ruta de tu barra
@@ -63,10 +64,24 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             Positioned.fill(
               child: Image.asset(
                 'assets/imagenes/fondo.jpeg',
-                fit:BoxFit.cover,
+                fit: BoxFit.cover,
               ),
-            const Positioned.fill(
-              child: AnimatedBackground(child: SizedBox.shrink()),
+            ),
+            // Capa sepia semitransparente para que los sellos contrasten bien
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF2B1A0A).withOpacity(0.45),
+                      const Color(0xFF1A1000).withOpacity(0.30),
+                      const Color(0xFF2B1A0A).withOpacity(0.50),
+                    ],
+                  ),
+                ),
+              ),
             ),
             
             // 2. LA PANTALLA
@@ -265,21 +280,203 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     );
   }
 
- Widget _buildSectionHeader() {
+  // --- El resto de tus métodos siguen igual (_buildSectionHeader, _mostrarCompraVidasDialog, etc.) ---
+  // Añado aquí la lógica del nodo limpio para no saturar el build
+  
+  Widget _buildLevelNode(int levelNumber, int currentLevel) {
+    final isCompleted = levelNumber < currentLevel;
+    final isActive = levelNumber == currentLevel;
+    final isLocked = levelNumber > currentLevel;
+    final bool isChest = levelNumber % 5 == 0;
+
+    // ── Paleta temática pergamino/pirata ────────────────────────────────
+    Color sealColor;
+    if (isLocked) {
+      sealColor = const Color(0xFF5C6478); // Gris azulado — bloqueado
+    } else if (isChest) {
+      sealColor = const Color(0xFFD4A017); // Dorado oscuro — cofre
+    } else if (isCompleted) {
+      // Distintos matices terrosos/náuticos para completados
+      final shades = [
+        const Color(0xFF7B5E3A), // Marrón cuero
+        const Color(0xFF3A7B6F), // Verde mar
+        const Color(0xFF7B3A4F), // Burdeos
+        const Color(0xFF3A4F7B), // Azul marino
+      ];
+      sealColor = shades[levelNumber % shades.length];
+    } else {
+      // Activo — dorado vivo del pergamino
+      sealColor = const Color(0xFFC8860A);
+    }
+
+    // ── Contenido dentro del sello ───────────────────────────────────────
+    Widget sealContent;
+    if (isChest) {
+      sealContent = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+            color: isLocked ? Colors.white38 : Colors.white,
+            size: 30,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$levelNumber',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: isLocked ? Colors.white38 : Colors.white,
+              shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+            ),
+          ),
+        ],
+      );
+    } else {
+      sealContent = Text(
+        '$levelNumber',
+        style: TextStyle(
+          fontSize: levelNumber >= 100 ? 26 : 34,
+          fontWeight: FontWeight.w900,
+          color: isLocked ? Colors.white38 : Colors.white,
+          shadows: const [
+            Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+      );
+    }
+
+    // ── Nodo base con sello ──────────────────────────────────────────────
+    Widget sealWidget = Stack(
+      alignment: Alignment.center,
+      children: [
+        // Sello teñido
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(sealColor, BlendMode.modulate),
+          child: Image.asset(
+            'assets/imagenes/sello.png',
+            width: 90,
+            height: 90,
+            fit: BoxFit.contain,
+          ),
+        ),
+        // Contenido (número / ícono)
+        sealContent,
+      ],
+    );
+
+    // Glow dorado pulsante en el nivel activo
+    if (isActive) {
+      sealWidget = Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFD166).withOpacity(0.6),
+              blurRadius: 22,
+              spreadRadius: 6,
+            ),
+            BoxShadow(
+              color: const Color(0xFFFFD166).withOpacity(0.25),
+              blurRadius: 40,
+              spreadRadius: 14,
+            ),
+          ],
+        ),
+        child: sealWidget,
+      );
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Tooltip "JUGAR" flotante sobre el nodo activo
+        if (isActive)
+          const Positioned(top: -30, child: FloatingTooltip()),
+
+        // Nodo principal
+        GestureDetector(
+          onTap: isLocked
+              ? null
+              : (isChest
+                  ? () => _abrirCofre(context, levelNumber)
+                  : () => _iniciarDesafiodeNivel(context, levelNumber)),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: sealWidget,
+          ),
+        ),
+
+        // Estrellas debajo
+        if (!isChest)
+          Positioned(
+            bottom: -8,
+            child: _buildStars(isCompleted),
+          ),
+
+        // Badge completado ✔
+        if (isCompleted && !isChest)
+          Positioned(
+            bottom: 8,
+            right: -6,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: const Color(0xFF58CC02),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+              ),
+              child: const Icon(Icons.check, size: 13, color: Colors.white),
+            ),
+          ),
+
+        // Badge bloqueado 🔒
+        if (isLocked)
+          Positioned(
+            bottom: 8,
+            right: -6,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C3545),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 1.5),
+              ),
+              child: const Icon(Icons.lock, size: 12, color: Colors.white38),
+            ),
+          ),
+      ],
+    );
+  }
+
+
+  Widget _buildSectionHeader() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00C897), Color(0xFF009673)], 
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        // Marrón pergamino semitransparente — se integra con el fondo
+        color: const Color(0xFF3D2B1A).withOpacity(0.82),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFD4A017).withOpacity(0.7),
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
+            color: const Color(0xFFD4A017).withOpacity(0.25),
+            blurRadius: 20,
+            spreadRadius: 2,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -289,44 +486,66 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Badge de sección
                 Container(
-                  padding:const EdgeInsets.symmetric(horizontal:10,vertical:4),
-                   decoration:BoxDecoration(
-                    color:const Color(0xFFFFD166).withOpacity(0.2),
-                    borderRadius:BorderRadius.circular(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A017).withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD4A017).withOpacity(0.6)),
                   ),
-               child:const Text(
-                  "SECCIÓN 1 · UNIDAD 1",
-                  style: TextStyle(
-                    color: Colors.white70, // 👈 Corregido aquí (blanco con 70% opacidad)
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                  child: const Text(
+                    "⚓  MAPA · RUTA 1",
+                    style: TextStyle(
+                      color: Color(0xFFFFD166),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 10),
+                const Text(
                   "Ruta de los Pigmentos",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
+                    color: Color(0xFFF5E6C8),
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  "Supera mezclas, branding y degradados infinitos para coronarte maestro.",
+                  "Supera mezclas, branding y degradados para coronarte maestro.",
                   style: TextStyle(
-                    color: Colors.white, // 👈 Corregido aquí (blanco sólido)
+                    color: const Color(0xFFD4B896).withOpacity(0.9),
                     fontSize: 13,
-                    height: 1.3,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 16),
-          Icon(Icons.palette_rounded, color: Colors.white, size: 45),
+          const SizedBox(width: 14),
+          // Ícono temático con sello de cera
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFFD4A017),
+                  BlendMode.modulate,
+                ),
+                child: Image.asset(
+                  'assets/imagenes/sello.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const Icon(Icons.explore_rounded, color: Colors.white, size: 26),
+            ],
+          ),
         ],
       ),
     );
@@ -335,13 +554,15 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   Widget _buildStars(bool isCompleted) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (starIndex) {
+      children: List.generate(3, (i) {
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1.0),
+          padding: const EdgeInsets.symmetric(horizontal: 1.5),
           child: Icon(
-            Icons.star,
-            size: 14,
-            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF343B4A),
+            Icons.star_rounded,
+            size: 18,
+            color: isCompleted
+                ? const Color(0xFFD4A017)   // Dorado pergamino
+                : const Color(0xFF6B5A45).withOpacity(0.6), // Marrón apagado
           ),
         );
       }),
@@ -497,7 +718,113 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   }
 }
 
-// ==================== COMPONENTE: TOOLTIP FLOTANTE ANIMADO ====================
+
+/// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
+class BranchPainter extends CustomPainter {
+  final bool isCenterRow;
+  final bool isLeftUnlocked;
+  final bool isRightUnlocked;
+  final double screenWidth;
+
+  BranchPainter({
+    required this.isCenterRow,
+    required this.isLeftUnlocked,
+    required this.isRightUnlocked,
+    required this.screenWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paintBg = Paint()
+      ..color = const Color(0xFF141824).withOpacity(0.5)
+      ..strokeWidth = 10.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final paintLineLeft = Paint()
+      ..color = isLeftUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final paintLineRight = Paint()
+      ..color = isRightUnlocked ? const Color(0xFFD4AF37) : const Color(0xFF384256)
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final double centerX = screenWidth / 2;
+    // La separación debe coincidir con el MainAxisAlignment.spaceEvenly
+    final double leftX = screenWidth * 0.25;
+    final double rightX = screenWidth * 0.75;
+
+    final double startY = 60.0 + (75 / 2); // Centro del botón actual
+    final double endY = 180.0 + 60.0 + (75 / 2); // Centro del botón en la SIGUIENTE fila
+
+    final path1 = Path();
+    final path2 = Path();
+
+    if (isCenterRow) {
+      // De Centro a Izquierda y Derecha (División)
+      path1.moveTo(centerX, startY);
+      path1.cubicTo(centerX, startY + 50, leftX, endY - 50, leftX, endY);
+
+      path2.moveTo(centerX, startY);
+      path2.cubicTo(centerX, startY + 50, rightX, endY - 50, rightX, endY);
+    } else {
+      // De Izquierda y Derecha al Centro (Convergencia)
+      path1.moveTo(leftX, startY);
+      path1.cubicTo(leftX, startY + 50, centerX, endY - 50, centerX, endY);
+
+      path2.moveTo(rightX, startY);
+      path2.cubicTo(rightX, startY + 50, centerX, endY - 50, centerX, endY);
+    }
+
+    // Dibujar sombras sólidas de fondo
+    canvas.drawPath(path1, paintBg);
+    canvas.drawPath(path2, paintBg);
+
+    // Dibujar líneas punteadas principales
+    _drawDashedPath(canvas, path1, paintLineLeft);
+    _drawDashedPath(canvas, path2, paintLineRight);
+  }
+
+  // Función interna para crear el efecto punteado (Dotted Line)
+  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
+    const double dotSpacing = 14.0;  // Espacio entre puntos
+    double distance = 0.0;
+
+    paint.strokeWidth = 0;
+    paint.style = PaintingStyle.fill;
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    // Extrae las métricas del path para ir dibujando fragmentos
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
+        if (tangent != null) {
+          canvas.drawCircle(tangent.position + const Offset(0, 2), 4.5, shadowPaint);
+          canvas.drawCircle(tangent.position, 4.5, paint);
+        }
+        distance += dotSpacing;
+      }
+      distance = 0.0; // Resetear para la siguiente curva
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant BranchPainter oldDelegate) {
+    return oldDelegate.isCenterRow != isCenterRow ||
+           oldDelegate.screenWidth != screenWidth ||
+           oldDelegate.isLeftUnlocked != isLeftUnlocked ||
+           oldDelegate.isRightUnlocked != isRightUnlocked;
+  }
+}
+
+/// Tooltip animado flotante
 class FloatingTooltip extends StatefulWidget {
   const FloatingTooltip({super.key});
 
