@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../controllers/user_controller.dart';
-import '../widgets/animated_background.dart';
 
 class PerfilScreen extends StatelessWidget {
   final String? correo;
@@ -48,9 +47,12 @@ class PerfilScreen extends StatelessWidget {
 
         return Stack(
           children:[
-            const Positioned.fill(
-              child: AnimatedBackground(child: SizedBox.shrink()),
-            ),
+            Positioned.fill(
+              child:Image.asset(
+                'assets/imagenes/fondo.jpeg',
+                fit:BoxFit.cover 
+              ),
+                  ),
           
 
         SingleChildScrollView(
@@ -377,4 +379,3 @@ void _mostrarGaleriaAvatares(BuildContext context, UserController controller) {
 }
 
 }
-

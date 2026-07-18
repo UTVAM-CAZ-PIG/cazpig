@@ -22,8 +22,11 @@ class _AjustesScreenState extends State<AjustesScreen> {
         final settings = _controller.settings;
         return Stack(
           children: [
-            const Positioned.fill(
-              child: AnimatedBackground(child: SizedBox.shrink()),
+            Positioned.fill(
+              child: Image.asset(
+                'assets/imagenes/fondo.jpeg',
+                fit:BoxFit.cover,
+              ),
             ),
             Scaffold(
               backgroundColor: Colors.transparent,
@@ -160,6 +163,18 @@ class _AjustesScreenState extends State<AjustesScreen> {
     );
   }
 
+  Widget _construirSeccionTitulo(String titulo) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+      child: Text(
+        titulo,
+        style: const TextStyle(
+            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black45, letterSpacing: 1.2),
+      ),
+    );
+  }
+}
+
   void _mostrarConfirmacionReinicio(BuildContext context) {
     showDialog(
       context: context,
@@ -197,6 +212,11 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 
                 await UserController().reiniciarTodoElProgreso();
 
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

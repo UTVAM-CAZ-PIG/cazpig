@@ -30,11 +30,21 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
   @override
   void initState() {
     super.initState();
-    _userController.verificarYRegenerarVidas();
-    // Scroll inicial automático al nivel activo del usuario (+1 para compensar el header)
+    // Calcular en qué fila está el nivel actual
     final activeLevel = _userController.currentUser.currentLevelReached;
-    final double initialOffset = max(0.0, (activeLevel - 2) * 140.0);
+    final int activeRow = _getRowForLevel(activeLevel);
+    
+    // Altura aproximada de cada fila es 180
+    final double initialOffset = max(0.0, (activeRow - 1) * 180.0);
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
+  }
+
+  // Función matemática para saber en qué fila cae un nivel (patrón 1-2-1-2)
+  int _getRowForLevel(int level) {
+    if (level <= 0) return 0;
+    int blocks = (level - 1) ~/ 3;
+    int remainder = (level - 1) % 3;
+    return (blocks * 2) + (remainder == 0 ? 0 : 1);
   }
 
   @override
@@ -52,6 +62,11 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 
         return Stack(
           children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/imagenes/fondo.jpeg',
+                fit:BoxFit.cover,
+              ),
             const Positioned.fill(
               child: AnimatedBackground(child: SizedBox.shrink()),
             ),
@@ -60,224 +75,88 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
               body: LayoutBuilder(
                 builder: (context, constraints) {
               final double screenWidth = constraints.maxWidth;
-
-              // Función que calcula la posición horizontal sinuosa de los nodos del mapa
-              double getXOffset(int index) {
-                // index va de 1 a 100
-                return screenWidth / 2 + sin(index * 0.8) * (screenWidth * 0.23);
-              }
+              
+              // Para 100 niveles en patrón 1, 2, 1, 2... necesitamos 67 filas + 1 Header
+              const int totalRows = 68;
 
               return ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 60),
-                itemCount: 101, // 1 Header + 100 Niveles
+                padding: const EdgeInsets.only(bottom: 100, top: 20),
+                itemCount: totalRows,
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _buildSectionHeader();
                   }
 
-                  final levelNumber = index; // Nivel 1 a 100
-                  final isCompleted = levelNumber < currentLevel;
-                  final isActive = levelNumber == currentLevel;
-                  final isLocked = levelNumber > currentLevel;
-                  final bool isChest = levelNumber % 5 == 0; // Cada 5 niveles hay un cofre de regalo
-
-                  // Determinar el color base según el tipo de nivel (rotación mod 12)
-                  final int levelType = levelNumber % 12;
-                  Color levelColor = Colors.teal;
-                  Color levelShadow = Colors.teal.shade800;
-
-                  if (levelType == 1) {
-                    levelColor = const Color(0xFF00C897); // Mezclas: Verde azulado brillante
-                    levelShadow = const Color(0xFF009673);
-                  } else if (levelType == 2) {
-                    levelColor = const Color(0xFFFF9F1C); // Branding: Naranja brillante
-                    levelShadow = const Color(0xFFCC7F16);
-                  } else if (levelType == 3) {
-                    levelColor = const Color(0xFF9B5DE5); // Degradados: Morado neón
-                    levelShadow = const Color(0xFF7B4AB5);
-                  } else if (levelType == 4) {
-                    levelColor = const Color(0xFF00B4D8); // Contraste: Celeste neón
-                    levelShadow = const Color(0xFF0077B6);
-                  } else if (levelType == 5) {
-                    levelColor = const Color(0xFFFF70A6); // Armonías: Rosa neón
-                    levelShadow = const Color(0xFFCC5985);
-                  } else if (levelType == 6) {
-                    levelColor = const Color(0xFFA5D6A7); // Daltonismo: Verde menta
-                    levelShadow = const Color(0xFF84AB85);
-                  } else if (levelType == 7) {
-                    levelColor = const Color(0xFFFFE066); // RGB: Amarillo brillante
-                    levelShadow = const Color(0xFFCCB352);
-                  } else if (levelType == 8) {
-                    levelColor = const Color(0xFFE53935); // Temperatura: Rojo neón
-                    levelShadow = const Color(0xFFB32C2A);
-                  } else if (levelType == 9) {
-                    levelColor = const Color(0xFFD81B60); // HEX: Fucsia neón
-                    levelShadow = const Color(0xFFB0164E);
-                  } else if (levelType == 10) {
-                    levelColor = const Color(0xFF8E24AA); // Ilusión Óptica: Morado oscuro neón
-                    levelShadow = const Color(0xFF6A1B80);
-                  } else if (levelType == 11) {
-                    levelColor = const Color(0xFF00E5FF); // Atmósferas: Cian eléctrico
-                    levelShadow = const Color(0xFF00B2C4);
+                  final int rowIndex = index - 1; // Fila 0, 1, 2...
+                  final bool isCenterRow = rowIndex % 2 == 0;
+                  
+                  // Calcular qué niveles van en esta fila
+                  List<int> levelsInRow = [];
+                  if (isCenterRow) {
+                    int lvl = (rowIndex ~/ 2) * 3 + 1;
+                    if (lvl <= 100) levelsInRow.add(lvl);
                   } else {
-                    levelColor = const Color(0xFF76FF03); // Saturación: Verde lima neón
-                    levelShadow = const Color(0xFF5CC702);
+                    int lvl1 = (rowIndex ~/ 2) * 3 + 2;
+                    int lvl2 = (rowIndex ~/ 2) * 3 + 3;
+                    if (lvl1 <= 100) levelsInRow.add(lvl1);
+                    if (lvl2 <= 100) levelsInRow.add(lvl2);
                   }
 
-                  if (isChest) {
-                    levelColor = const Color(0xFFFFD166); // Oro/Dorado para el cofre
-                    levelShadow = const Color(0xFFD4AA3F);
-                  }
 
-                  // Si está completado, color verde esmeralda brillante
-                  if (isCompleted && !isChest) {
-                    levelColor = const Color.fromARGB(255, 70, 149, 9);
-                    levelShadow = const Color.fromARGB(255, 48, 107, 6);
-                  }
+                  bool isLeftUnlocked=false;
+                  bool isRightUnlocked=false;
 
-                  // Si está bloqueado, color gris
-                  if (isLocked) {
-                    levelColor = const Color(0xFF4E586E);
-                    levelShadow = const Color(0xFF343B4A);
-                  }
+                  if (isCenterRow){
+                   if (levelsInRow.isNotEmpty){
+                    int centerLevel = levelsInRow[0];
+                    int leftTarget = centerLevel +1;
+                    int rightTarget = centerLevel +2;
 
-                  final double currentX = getXOffset(levelNumber);
-                  final double nextX = getXOffset(levelNumber + 1);
+                    isLeftUnlocked = currentLevel >= leftTarget;
+                    isRightUnlocked = currentLevel >= rightTarget;
+                   }
+                  }else{
+                    if(levelsInRow.isNotEmpty){
+                      int leftLevel = levelsInRow[0];
+                      int centerTarget = leftLevel +2;
+
+                      isLeftUnlocked = currentLevel >= centerTarget;
+                      isRightUnlocked = currentLevel >= centerTarget;
+                      
+
+                    }
+                  }
 
                   return SizedBox(
-                    height: 190, // Aumentamos la altura para dar más espacio
+                    height: 180, // Altura fija por bloque
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // 1. Dibujar línea curva de conexión con el siguiente nivel
-                        if (levelNumber < 100)
+                        // 1. Dibujar líneas de conexión hacia la SIGUIENTE fila
+                        if (levelsInRow.isNotEmpty && levelsInRow.last < 100)
                           Positioned.fill(
                             child: IgnorePointer(
                               child: CustomPaint(
-                                painter: PathPainter(
-                                  x1: currentX,
-                                  x2: nextX,
-                                  unlocked: levelNumber < currentLevel,
-                                  activeColor: levelColor,
+                                painter: BranchPainter(
+                                  isCenterRow: isCenterRow,
+                                  screenWidth: screenWidth,
+                                  // Las líneas brillan si el nivel central de la fila ya fue superado
+                                  isLeftUnlocked:isLeftUnlocked,
+                                  isRightUnlocked:isRightUnlocked,
                                 ),
                               ),
                             ),
                           ),
 
-                        // 2. Elemento interactivo (Nivel o Cofre)
-                        Positioned(
-                          left: currentX - 35, // Centrado para un botón de 70px de ancho
-                          top: 25,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            clipBehavior: Clip.none,
-                            children: [
-                              // Contenedor para el efecto de brillo (glow)
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: isChest ? BoxShape.rectangle : BoxShape.circle,
-                                  borderRadius: isChest ? BorderRadius.circular(20) : null,
-                                  boxShadow: isCompleted && !isChest
-                                    ? [
-                                        BoxShadow(
-                                          color: levelColor.withOpacity(0.5),
-                                          blurRadius: 12,
-                                          spreadRadius: 2,
-                                        ),
-                                      ] 
-                                    : null,
-                                ),
-                                child: GameButton(
-                                  width: 70,
-                                  height: 70,
-                                  borderRadius: isChest ? 20 : 35,
-                                  backgroundColor: levelColor,
-                                  shadowColor: levelShadow,
-                                  onTap: isChest ? () => _abrirCofre(context, levelNumber) : () => _iniciarDesafiodeNivel(context, levelNumber),
-                                  enabled: !isLocked,
-                                child: isChest
-                                    ? Icon(
-                                        isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
-                                        color: isLocked ? Colors.white60 : const Color(0xFF191D2B),
-                                        size: 32,
-                                      )
-                                    : Container(
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: RadialGradient(
-                                            colors: isLocked
-                                                ? [const Color(0xFF5A667D), const Color(0xFF343B4A)]
-                                                : [levelColor.withOpacity(0.6), levelColor],
-                                            center: const Alignment(0.0, -0.2),
-                                            radius: 0.8,
-                                          ),
-                                          border: Border.all(
-                                            color: isLocked ? Colors.transparent : Colors.white.withOpacity(0.1),
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '$levelNumber',
-                                            style: TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.bold,
-                                              color: isLocked ? Colors.white60 : Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                ),
-                              ),
-
-                              // Tooltip flotante encima si es el nivel activo
-                              if (isActive)
-                                const Positioned(
-                                  top: -45,
-                                  child: FloatingTooltip(),
-                                ),
-
-                              // Tres estrellas debajo del nivel
-                              if (!isChest)
-                                Positioned(
-                                  bottom: isCompleted ? -25 : -22, // Un poco más abajo si está completado
-                                  child: _buildStars(isCompleted),
-                                ),
-
-                              // Checkmark si está completado
-                              if (isCompleted && !isChest)
-                                const Positioned(
-                                  bottom: -5,
-                                  right: -5,
-                                  child: CircleAvatar(
-                                    radius: 12,
-                                    backgroundColor: Color(0xFF58CC02), // Verde vibrante
-                                    child: Icon(
-                                      Icons.check,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-
-                              // Candado si está bloqueado
-                              if (isLocked)
-                                Positioned(
-                                  bottom: -5,
-                                  right: -5,
-                                  child: CircleAvatar(
-                                    radius: 11,
-                                    backgroundColor: const Color(0xFF2C3545),
-                                    child: const Icon(
-                                      Icons.lock,
-                                      size: 11,
-                                      color: Colors.white60,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                        // 2. Colocar los botones de los niveles
+                        Row(
+                          mainAxisAlignment: isCenterRow 
+                              ? MainAxisAlignment.center 
+                              : MainAxisAlignment.spaceEvenly,
+                          children: levelsInRow.map((levelNumber) {
+                            return _buildLevelNode(levelNumber, currentLevel);
+                          }).toList(),
                         ),
                       ],
                     ),
@@ -293,22 +172,147 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     );
   }
 
+  // --- El resto de tus métodos siguen igual (_buildSectionHeader, _mostrarCompraVidasDialog, etc.) ---
+  // Añado aquí la lógica del nodo limpio para no saturar el build
+  
+  Widget _buildLevelNode(int levelNumber, int currentLevel) {
+    final isCompleted = levelNumber < currentLevel;
+    final isActive = levelNumber == currentLevel;
+    final isLocked = levelNumber > currentLevel;
+    final bool isChest = levelNumber % 5 == 0;
+
+    // Colores
+    final int levelType = levelNumber % 3;
+    Color levelColor = Colors.teal;
+    
+
+    if (levelType == 1) {
+      levelColor = const Color(0xFF00C897);
+    } else if (levelType == 2) {
+      levelColor = const Color(0xFFFF9F1C);
+    } else {
+ levelColor = const Color(0xFF9B5DE5);
+     
+    }
+
+    if (isChest) {
+      levelColor = const Color(0xFFFFD166); 
+    }
+    if (isCompleted && !isChest) {
+      final int colorCompletado = levelNumber % 4;
+
+      if (colorCompletado == 0) {
+        levelColor = const Color(0xFF9E4747); // Azul cian vibrante pero suave
+      } else if (colorCompletado == 1) {
+        levelColor = const Color(0xFF4A708B); // Rosa sandía / fucsia claro
+      } else if (colorCompletado == 2) {
+        levelColor = const Color(0xFF5A7247); // Verde menta fresco (no neón)
+      } else {
+        levelColor = const Color(0xFF8B6375); // Violeta brillante
+      }
+    }
+    if (isLocked) {
+      levelColor = const Color(0xFF4E586E); 
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 25), // Espacio para tooltips
+          child:GestureDetector(
+           onTap: isLocked
+           ? null
+           :(isChest ? () => _abrirCofre(context, levelNumber) : () => _iniciarDesafiodeNivel(context, levelNumber)),
+           child:SizedBox(
+            width:150,
+            height:150,
+           child: isChest
+           ? Icon(isCompleted ? Icons.drafts_outlined : Icons.inventory_2_outlined,
+           color:isLocked ? Colors.white60 : const Color(0xFF191D2B),
+           size:40,
+           )
+           :Stack(
+            alignment:Alignment.center,
+            children:[
+              ColorFiltered(colorFilter: ColorFilter.mode(levelColor,BlendMode.srcIn,),
+              child:Image.asset(
+                'assets/imagenes/sello.png',
+                width:150,
+                height:150,
+                fit:BoxFit.contain,
+              ),
+              ),
+              Text(
+                '$levelNumber',
+                style:TextStyle(
+                  fontSize:42,
+                  fontWeight:FontWeight.bold,
+                  color:isLocked ? Colors.white60 : Colors.white,
+                  shadows:[
+                    Shadow(
+                      color:Colors.black.withOpacity(0.5),
+                      blurRadius:4,
+                      offset:const Offset(0,2),
+                    )
+                  ],
+                ),
+              ),
+            ],
+
+           ),
+          ),
+        ), // 
+        ),
+
+        if (isActive)
+          const Positioned(top: -25, child: FloatingTooltip()),
+        if (!isChest)
+          Positioned(
+            bottom: isCompleted ? -15 : -12,
+            child: _buildStars(isCompleted),
+          ),
+        if (isCompleted && !isChest)
+          const Positioned(
+            bottom: 5,
+            right: -5,
+            child: CircleAvatar(
+              radius: 12,
+              backgroundColor: Color(0xFF58CC02),
+              child: Icon(Icons.check, size: 14, color: Colors.white),
+            ),
+          ),
+        if (isLocked)
+          const Positioned(
+            bottom: 5,
+            right: -5,
+            child: CircleAvatar(
+              radius: 11,
+              backgroundColor: Color(0xFF2C3545),
+              child: Icon(Icons.lock, size: 11, color: Colors.white60),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildSectionHeader() {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color.fromARGB(255, 204, 2, 63), Color.fromARGB(255, 163, 2, 45)], // Verde vibrante
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          color: const Color(0xFF1E1E2A).withOpacity(0.85), // Verde vibrante
+        borderRadius: BorderRadius.circular(30),
+        border:Border.all(
+          color:const Color(0xFFFFD166).withOpacity(0.5),
+          width:2
         ),
-        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -318,16 +322,23 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Container(
+                  padding:const EdgeInsets.symmetric(horizontal:10,vertical:4),
+                   decoration:BoxDecoration(
+                    color:const Color(0xFFFFD166).withOpacity(0.2),
+                    borderRadius:BorderRadius.circular(10),
+                  ),
+               child:const Text(
                   "SECCIÓN 1 · UNIDAD 1",
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 12,
+                    color: Color(0xFFFFD166),
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 6),
+                ),
+                const SizedBox(height: 12),
                 const Text(
                   "Ruta de los Pigmentos",
                   style: TextStyle(
@@ -336,20 +347,27 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   "Supera mezclas, branding y degradados infinitos para coronarte maestro.",
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    height: 1.3,
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 16),
-          const Icon(Icons.palette_rounded, color: Colors.white, size: 45),
+          Container(
+          padding:const EdgeInsets.all(12),
+          decoration:const BoxDecoration(
+            color:Color(0xFFFFD166),
+            shape:BoxShape.circle,
+          ),
+          child:const Icon(Icons.palette_rounded,color:Color(0xFF1E1E2A),size:36)
+          ),
         ],
       ),
     );
@@ -362,9 +380,10 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 1.0),
           child: Icon(
-            Icons.star,
-            size: 14,
-            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF4A5568),
+            Icons.star_rounded,
+            size: 22,
+            color: isCompleted ? const Color(0xFFFFD60A) : const Color(0xFF4A5568).withOpacity(0.7),
+            
           ),
         );
       }),
@@ -491,7 +510,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
@@ -537,38 +556,95 @@ class PathPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Sombra/Base de la carretera
     final paintBg = Paint()
-      ..color = const Color(0xFF141824)
-      ..strokeWidth = 16.0
+      ..color = const Color(0xFF141824).withOpacity(0.5)
+      ..strokeWidth = 10.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    // Línea del camino
-    final paintLine = Paint()
-      ..color = unlocked ? activeColor : const Color(0xFF384256)
-      ..strokeWidth = 8.0
+    final paintLineLeft = Paint()
+      ..color = isLeftUnlocked ? const Color(0XFFD4AF37): const Color(0xFF384256)
+      ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    final path = Path();
-    path.moveTo(x1, 60);
+      final paintLineRight = Paint()
+      ..color = isRightUnlocked ? const Color(0XFFD4AF37) : const Color(0xFF384256)
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-    // Curva Bezier cúbica orgánica que simula una carretera S
-    final double controlY1 = 60 + 40;
-    final double controlY2 = 60 + 100;
-    path.cubicTo(x1, controlY1, x2, controlY2, x2, 160 + 60); // Ajustado a la nueva altura
 
-    canvas.drawPath(path, paintBg);
-    canvas.drawPath(path, paintLine);
+      final double centerX = screenWidth / 2;
+    // La separación debe coincidir con el MainAxisAlignment.spaceEvenly
+    final double leftX = screenWidth * 0.25; 
+    final double rightX = screenWidth * 0.75;
+    
+    final double startY = 60.0 + (75 / 2); // Centro del botón actual
+    final double endY = 180.0 + 60.0 + (75 / 2); // Centro del botón en la SIGUIENTE fila
+
+    final path1 = Path();
+    final path2 = Path();
+
+   
+    if (isCenterRow) {
+      // De Centro a Izquierda y Derecha (División)
+      path1.moveTo(centerX, startY);
+      path1.cubicTo(centerX, startY + 50, leftX, endY - 50, leftX, endY);
+
+      path2.moveTo(centerX, startY);
+      path2.cubicTo(centerX, startY + 50, rightX, endY - 50, rightX, endY);
+    } else {
+      // De Izquierda y Derecha al Centro (Convergencia)
+      path1.moveTo(leftX, startY);
+      path1.cubicTo(leftX, startY + 50, centerX, endY - 50, centerX, endY);
+
+      path2.moveTo(rightX, startY);
+      path2.cubicTo(rightX, startY + 50, centerX, endY - 50, centerX, endY);
+    }
+
+    // Dibujar sombras sólidas de fondo
+    canvas.drawPath(path1, paintBg);
+    canvas.drawPath(path2, paintBg);
+
+    // Dibujar líneas punteadas principales
+    _drawDashedPath(canvas, path1, paintLineLeft);
+    _drawDashedPath(canvas, path2, paintLineRight);
+  }
+
+  // Función interna para crear el efecto punteado (Dotted Line)
+  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
+    const double dotSpacing = 14.0;  // Espacio entre puntos
+    double distance = 0.0;
+
+    paint.strokeWidth = 0;
+    paint.style = PaintingStyle.fill;
+
+    final Paint shadowPaint = Paint()
+    ..color = Colors.black.withOpacity(0.3)
+    ..style = PaintingStyle.fill;
+
+    // Extrae las métricas del path para ir dibujando fragmentos
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
+        if(tangent !=null){ 
+          canvas.drawCircle(tangent.position + const Offset(0,2),4.5,shadowPaint);
+
+          canvas.drawCircle(tangent.position,4.5,paint);
+        }
+        distance += dotSpacing;
+      }
+      distance = 0.0; // Resetear para la siguiente curva
+    }
   }
 
   @override
-  bool shouldRepaint(covariant PathPainter oldDelegate) {
-    return oldDelegate.x1 != x1 ||
-        oldDelegate.x2 != x2 ||
-        oldDelegate.unlocked != unlocked ||
-        oldDelegate.activeColor != activeColor;
+  bool shouldRepaint(covariant BranchPainter oldDelegate) {
+    return oldDelegate.isCenterRow != isCenterRow ||
+           oldDelegate.screenWidth != screenWidth ||
+           oldDelegate.isLeftUnlocked != isLeftUnlocked ||
+           oldDelegate.isRightUnlocked != isRightUnlocked;
   }
 }
 
@@ -618,7 +694,7 @@ class _FloatingTooltipState extends State<FloatingTooltip> with SingleTickerProv
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
