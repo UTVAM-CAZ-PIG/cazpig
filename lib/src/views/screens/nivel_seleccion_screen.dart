@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../controllers/user_controller.dart';
 import '../widgets/game_button.dart';
+import '../widgets/animated_background.dart';
 import 'gameplay/nivel1_screen.dart';
 import 'gameplay/nivel2_screen.dart';
 import 'gameplay/nivel3_screen.dart';
 import 'gameplay/nivel4_screen.dart';
-import 'dart:ui' as ui;
+import 'gameplay/nivel5_screen.dart';
+import 'gameplay/nivel6_screen.dart';
+import 'gameplay/nivel7_screen.dart';
+import 'gameplay/nivel8_screen.dart';
+import 'gameplay/nivel9_screen.dart';
+import 'gameplay/nivel10_screen.dart';
+import 'gameplay/nivel11_screen.dart';
+import 'gameplay/nivel12_screen.dart';
 
 class NivelSeleccionScreen extends StatefulWidget {
   const NivelSeleccionScreen({super.key});
@@ -59,6 +67,8 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
                 'assets/imagenes/fondo.jpeg',
                 fit:BoxFit.cover,
               ),
+            const Positioned.fill(
+              child: AnimatedBackground(child: SizedBox.shrink()),
             ),
             Scaffold(
               backgroundColor: Colors.transparent, // Fondo transparente para ver el CustomPaint
@@ -387,7 +397,7 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
     }
 
     Widget pantallaDestino;
-    int tipo = nivel % 4;
+    int tipo = nivel % 12;
 
     if (tipo == 1) {
       pantallaDestino = Nivel1Screen(nivelInicial: nivel);
@@ -395,14 +405,32 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
       pantallaDestino = Nivel2Screen(nivelInicial: nivel);
     } else if (tipo == 3) {
       pantallaDestino = Nivel3Screen(nivelInicial: nivel);
-    } else {
+    } else if (tipo == 4) {
       pantallaDestino = Nivel4Screen(nivelInicial: nivel);
+    } else if (tipo == 5) {
+      pantallaDestino = Nivel5Screen(nivelInicial: nivel);
+    } else if (tipo == 6) {
+      pantallaDestino = Nivel6Screen(nivelInicial: nivel);
+    } else if (tipo == 7) {
+      pantallaDestino = Nivel7Screen(nivelInicial: nivel);
+    } else if (tipo == 8) {
+      pantallaDestino = Nivel8Screen(nivelInicial: nivel);
+    } else if (tipo == 9) {
+      pantallaDestino = Nivel9Screen(nivelInicial: nivel);
+    } else if (tipo == 10) {
+      pantallaDestino = Nivel10Screen(nivelInicial: nivel);
+    } else if (tipo == 11) {
+      pantallaDestino = Nivel11Screen(nivelInicial: nivel);
+    } else {
+      pantallaDestino = Nivel12Screen(nivelInicial: nivel);
     }
 
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => pantallaDestino),
-    );
+    ).then((_) {
+      _userController.verificarYRegenerarVidas();
+    });
   }
 
   void _mostrarCompraVidasDialog(BuildContext context) {
@@ -512,19 +540,18 @@ class _NivelSeleccionScreenState extends State<NivelSeleccionScreen> {
 }
 
 
+/// Pintor para dibujar curvas Bezier sinuosas entre nodos adyacentes
+class PathPainter extends CustomPainter {
+  final double x1;
+  final double x2;
+  final bool unlocked;
+  final Color activeColor;
 
-/// Pintor para dibujar las ramas de conexión entre filas
-class BranchPainter extends CustomPainter {
-  final bool isCenterRow;
-  final double screenWidth;
-  final bool isLeftUnlocked;
-  final bool isRightUnlocked;
-
-  BranchPainter({
-    required this.isCenterRow,
-    required this.screenWidth,
-    required this.isLeftUnlocked,
-    required this.isRightUnlocked,
+  PathPainter({
+    required this.x1,
+    required this.x2,
+    required this.unlocked,
+    required this.activeColor,
   });
 
   @override
