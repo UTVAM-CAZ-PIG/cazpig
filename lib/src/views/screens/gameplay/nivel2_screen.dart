@@ -98,7 +98,10 @@ class Nivel2Screen extends StatelessWidget {
                     backgroundColor: itemColor,
                     shadowColor: _getShadowColor(itemColor),
                     borderRadius: 20,
-                    onTap: () => controller.seleccionarColor(itemColor),
+                    onTap: () {
+                      controller.seleccionarColor(itemColor);
+                      controller.comprobarResultadoAutomatico(context);
+                    },
                     child: Container(
                       alignment: Alignment.bottomCenter,
                       padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),

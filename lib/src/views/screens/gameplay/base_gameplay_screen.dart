@@ -12,7 +12,7 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
   final C Function(BuildContext context) controllerFactory;
   final Widget Function(BuildContext context, C controller) gameFieldBuilder;
   final Widget Function(BuildContext context, C controller)? instructionCardBuilder;
-  final bool ocultarBotonComprobar; // <--- NUEVA PROPIEDAD CONTROLADORA
+  final bool ocultarBotonComprobar; 
 
   const BaseGameplayScreen({
     super.key,
@@ -20,7 +20,7 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
     required this.controllerFactory,
     required this.gameFieldBuilder,
     this.instructionCardBuilder,
-    this.ocultarBotonComprobar = false, // Por defecto se muestra para otros niveles
+    this.ocultarBotonComprobar = true, // <--- CAMBIADO A TRUE PARA QUITAR EL BOTÓN
   });
 
   @override
