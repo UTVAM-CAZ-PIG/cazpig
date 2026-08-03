@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../controllers/user_controller.dart';
 import '../../widgets/game_button.dart';
 import '../../widgets/game_bottom_sheet.dart';
@@ -12,7 +11,7 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
   final C Function(BuildContext context) controllerFactory;
   final Widget Function(BuildContext context, C controller) gameFieldBuilder;
   final Widget Function(BuildContext context, C controller)? instructionCardBuilder;
-  final bool ocultarBotonComprobar; // <--- NUEVA PROPIEDAD CONTROLADORA
+  final bool ocultarBotonComprobar; 
 
   const BaseGameplayScreen({
     super.key,
@@ -20,20 +19,26 @@ class BaseGameplayScreen<T extends LevelModel, C extends BaseLevelController<T>>
     required this.controllerFactory,
     required this.gameFieldBuilder,
     this.instructionCardBuilder,
-    this.ocultarBotonComprobar = false, // Por defecto se muestra para otros niveles
+    this.ocultarBotonComprobar = true,
   });
 
   @override
-  State<BaseGameplayScreen<T, C>> createState() => _BaseGameplayScreenState<T, C>();
+  State<BaseGameplayScreen<T, C>> createState() => BaseGameplayScreenState<T, C>();
 }
 
-class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelController<T>> extends State<BaseGameplayScreen<T, C>> {
+class BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelController<T>> extends State<BaseGameplayScreen<T, C>> {
   late C _controller;
+  bool _alertaAbierta = false;
 
   @override
   void initState() {
     super.initState();
+    _inicializarControlador();
+  }
+
+  void _inicializarControlador() {
     _controller = widget.controllerFactory(context);
+    _alertaAbierta = false;
   }
 
   @override
@@ -42,18 +47,23 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
     super.dispose();
   }
 
-  void _comprobar() {
+  /// Método público de comprobación único.
+  void comprobar() {
+    if (_alertaAbierta) return;
+    _alertaAbierta = true;
+
     final bool correcto = _controller.comprobarResultado();
 
     if (correcto) {
       UserController().completarNivel(widget.nivel);
       final String fact = LevelGenerator.obtenerDatoCurioso(_controller.datosNivel);
+
       GameBottomSheet.mostrarVictoria(
         context: context,
         pigmentosGanados: 30,
         datoCurioso: fact,
         onContinuar: () {
-          Navigator.pop(context);
+          Navigator.of(context).pop(); // Regresa al mapa
         },
       );
     } else {
@@ -67,16 +77,17 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
             ? "Te has quedado sin vidas. ¡Repón vidas en el mapa!"
             : mensajeError,
         onReintentar: () {
-          if (livesLeft <= 0) {
-            Navigator.pop(context);
-          } else {
+          if (livesLeft > 0) {
             setState(() {
-              _controller = widget.controllerFactory(context);
+              _controller.dispose();
+              _inicializarControlador(); // Reinicia el controlador limpiamente
             });
+          } else {
+            Navigator.of(context).pop();
           }
         },
         onVolver: () {
-          Navigator.pop(context);
+          Navigator.of(context).pop();
         },
       );
     }
@@ -105,7 +116,6 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                   final user = UserController().currentUser;
                   return Row(
                     children: [
-                      // VIDAS
                       const Icon(Icons.favorite_rounded, color: Color(0xFFFF4B4B), size: 20),
                       const SizedBox(width: 4),
                       Text(
@@ -117,7 +127,6 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                         ),
                       ),
                       const SizedBox(width: 14),
-                      // PIGMENTOS
                       const Icon(Icons.diamond_rounded, color: Color(0xFF00C897), size: 20),
                       const SizedBox(width: 4),
                       Text(
@@ -161,7 +170,6 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                 ),
               ),
 
-              // SI SE ACTIVA LA BANDERA, QUITAMOS EL CONTENEDOR GRIS DE ABAJO COMPLETAMENTE
               if (!widget.ocultarBotonComprobar)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -178,7 +186,7 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
                           ? const Color(0xFF46A302)
                           : Colors.grey.shade800,
                       enabled: _controller.listoParaComprobar,
-                      onTap: _comprobar,
+                      onTap: comprobar,
                       child: const Text(
                         "COMPROBAR",
                         style: TextStyle(
@@ -198,14 +206,10 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
   }
 
   String _obtenerMensajeError(LevelModel model) {
-    if (model is ContrastLevelModel) {
-      return model.explanation;
-    }
-    if (model is BlindLevelModel) {
-      return model.explanation;
-    }
+    if (model is ContrastLevelModel) return model.explanation;
+    if (model is BlindLevelModel) return model.explanation;
     if (model is MixLevelModel) {
-      return "Mezclar pigmentos físicos es sustractivo: busca qué dos reactivos combinados forman el tono objetivo (los primarios son azul, amarillo y rojo).";
+      return "Mezclar pigmentos físicos es sustractivo: busca qué dos reactivos combinados forman el tono objetivo.";
     }
     if (model is SearchLevelModel) {
       return "El tono solicitado responde a la psicología del color. Elige el matiz que exprese mejor la emoción del brief.";
@@ -214,25 +218,23 @@ class _BaseGameplayScreenState<T extends LevelModel, C extends BaseLevelControll
       return "El color correcto debe encajar de forma suave y progresiva en la escala cromática sin romper la gradación visual.";
     }
     if (model is HarmonyLevelModel) {
-      return "La respuesta correcta debe formar la relación geométrica solicitada: el complementario (opuesto) o análogo (color vecino en el círculo).";
+      return "La respuesta correcta debe formar la relación geométrica solicitada.";
     }
     if (model is RgbLevelModel) {
-      return "El color resultante de tu mezcla difiere del objetivo. Ajusta los canales R, G y B guiándote por el medidor de similitud.";
+      return "El color resultante de tu mezcla difiere del objetivo. Ajusta los canales R, G y B.";
     }
     if (model is TempLevelModel) {
-      return "¡Cuidado! Clasifica los cálidos (rojo, naranja, amarillo) en el frasco izquierdo y los fríos (azul, verde, violeta) en el derecho.";
+      return "¡Cuidado! Clasifica los cálidos en el frasco izquierdo y los fríos en el derecho.";
     }
     if (model is HexLevelModel) {
-      return "El código hexadecimal #RRGGBB representa la intensidad del Rojo, Verde y Azul. Compara las muestras con el código dado.";
+      return "El código hexadecimal #RRGGBB representa la intensidad del Rojo, Verde y Azul.";
     }
-    if (model is AlbersLevelModel) {
-      return model.explanation;
-    }
+    if (model is AlbersLevelModel) return model.explanation;
     if (model is AtmosphereLevelModel) {
-      return "La paleta correcta debe ser coherente con la temática y las emociones del brief cinematográfico solicitado.";
+      return "La paleta correcta debe ser coherente con la temática y las emociones del brief cinematográfico.";
     }
     if (model is SaturationLevelModel) {
-      return "El orden secuencial correcto debe ir de menor a mayor pureza: desde el color más grisáceo hasta el tono más puro y vivo.";
+      return "El orden secuencial correcto debe ir de menor a mayor pureza.";
     }
     return "Esa no es la respuesta correcta. ¡Inténtalo de nuevo!";
   }

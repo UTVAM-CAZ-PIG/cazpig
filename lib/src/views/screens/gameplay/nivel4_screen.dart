@@ -138,7 +138,10 @@ class Nivel4Screen extends StatelessWidget {
                     borderRadius: 16,
                     backgroundColor: color,
                     shadowColor: _getShadowColor(color),
-                    onTap: () => controller.seleccionarColor(color),
+                    onTap: () {
+                      controller.seleccionarColor(color);
+                      controller.comprobarResultadoAutomatico(context);
+                    },
                     child: const SizedBox.shrink(),
                   ),
                 );

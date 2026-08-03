@@ -31,7 +31,7 @@ class Nivel11Screen extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: InkWell(
-                  onTap: () => controller.seleccionarPaleta(palette),
+                  onTap: () => controller.seleccionarPaleta(palette, context),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(8),

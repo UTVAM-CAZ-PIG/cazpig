@@ -28,39 +28,33 @@ class Nivel9Screen extends StatelessWidget {
 
         return Column(
           children: [
-            // HEX CODE DISPLAY CARD
             const Text(
-              "CÓDIGO HEXADECIMAL DEL REACTIVO:",
+              "CÓDIGO HEXADECIMAL OBJETIVO:",
               style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF131720),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFF9F1C).withOpacity(0.3), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF9F1C).withOpacity(0.15),
-                    blurRadius: 20,
-                  ),
-                ],
+                color: const Color(0xFF141824),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF2C3446), width: 1.5),
               ),
               child: Text(
+                // Corregido: hexCode
                 datosNivel.hexCode,
                 style: const TextStyle(
-                  color: Color(0xFFFF9F1C),
-                  fontSize: 32,
+                  color: Colors.white,
+                  fontSize: 22,
                   fontFamily: 'monospace',
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
                 ),
               ),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 40),
             const Text(
-              "PIGMENTOS DE LABORATORIO DISPONIBLES:",
+              "SELECCIONA EL PIGMENTO CORRECTO:",
               style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -85,13 +79,28 @@ class Nivel9Screen extends StatelessWidget {
                     borderRadius: 20,
                     backgroundColor: color,
                     shadowColor: _getShadowColor(color),
-                    onTap: () => controller.seleccionarColor(color),
+                    onTap: () {
+                      controller.seleccionarColor(color);
+                      controller.verificarYMostrarAlerta(context);
+                    },
                     child: Container(
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.science_outlined,
-                        color: Colors.white60,
-                        size: 28,
+                      alignment: Alignment.bottomCenter,
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "#${color.value.toRadixString(16).substring(2).toUpperCase()}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
