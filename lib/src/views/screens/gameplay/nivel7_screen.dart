@@ -35,7 +35,7 @@ class Nivel7Screen extends StatelessWidget {
                         border: Border.all(color: Colors.white24, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: datosNivel.targetColor.withOpacity(0.55),
+                            color: datosNivel.targetColor.withValues(alpha: 0.55),
                             blurRadius: 16,
                           ),
                         ],
@@ -71,7 +71,7 @@ class Nivel7Screen extends StatelessWidget {
                         border: Border.all(color: const Color(0xFFFF9F1C), width: 2.5),
                         boxShadow: [
                           BoxShadow(
-                            color: current.withOpacity(0.55),
+                            color: current.withValues(alpha: 0.55),
                             blurRadius: 16,
                           ),
                         ],
@@ -129,9 +129,10 @@ class Nivel7Screen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // CONTROLES DESLIZADORES
+            // CONTROLES DESLIZADORES CON DETECCIÓN AUTOMÁTICA
             _buildSliderRow(
               context: context,
+              controller: controller,
               label: "ROJO (R)",
               value: controller.r,
               color: Colors.redAccent,
@@ -140,6 +141,7 @@ class Nivel7Screen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSliderRow(
               context: context,
+              controller: controller,
               label: "VERDE (G)",
               value: controller.g,
               color: Colors.greenAccent,
@@ -148,6 +150,7 @@ class Nivel7Screen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSliderRow(
               context: context,
+              controller: controller,
               label: "AZUL (B)",
               value: controller.b,
               color: Colors.blueAccent,
@@ -161,6 +164,7 @@ class Nivel7Screen extends StatelessWidget {
 
   Widget _buildSliderRow({
     required BuildContext context,
+    required Nivel7Controller controller,
     required String label,
     required double value,
     required Color color,
@@ -193,6 +197,12 @@ class Nivel7Screen extends StatelessWidget {
           activeColor: color,
           inactiveColor: Colors.grey.shade800,
           onChanged: onChanged,
+          onChangeEnd: (_) {
+            // Dispara la alerta automáticamente al soltar el slider cuando la mezcla es correcta (>= 87%)
+            if (controller.similarity >= 87) {
+              controller.procesarComprobacion(context);
+            }
+          },
         ),
       ],
     );

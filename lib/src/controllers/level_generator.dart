@@ -25,73 +25,73 @@ class LevelGenerator {
   // Psicología del color para el modo Branding (Nivel 2)
   static final List<Map<String, dynamic>> _psicologiaColor = [
     {
-      "color": const Color(0xFF1E88E5), // Azul
+      "color": const Color(0xFF1E88E5),
       "name": "Azul Corporativo",
       "emocion": "alta confianza, seguridad institucional, estabilidad y lógica científica",
       "context": "TECNOLOGÍA Y SALUD"
     },
     {
-      "color": const Color(0xFFE53935), // Rojo
+      "color": const Color(0xFFE53935),
       "name": "Rojo Impulsivo",
       "emocion": "activar el apetito inmediato de los consumidores de forma masiva y veloz",
       "context": "FAST FOOD Y EVENTOS"
     },
     {
-      "color": const Color(0xFF43A047), // Verde
+      "color": const Color(0xFF43A047),
       "name": "Verde Orgánico",
       "emocion": "sustentabilidad, desarrollo orgánico y equilibrio natural de la vida",
       "context": "PRODUCTOS ECO Y BIENESTAR"
     },
     {
-      "color": const Color(0xFF212121), // Negro
+      "color": const Color(0xFF212121),
       "name": "Negro Premium",
       "emocion": "elegancia absoluta, sofisticación, solemnidad y alto estatus económico",
       "context": "LUJO EXCLUSIVO"
     },
     {
-      "color": const Color(0xFFFFB300), // Amarillo
+      "color": const Color(0xFFFFB300),
       "name": "Amarillo Optimismo",
       "emocion": "diversión pura, energía radiante, optimismo y estímulo mental temprano",
       "context": "INFANTIL Y JUGUETES"
     },
     {
-      "color": const Color(0xFFEF6C00), // Naranja
+      "color": const Color(0xFFEF6C00),
       "name": "Naranja Innovación",
       "emocion": "innovación constante, juventud, diversión, dinamismo y factor de asombro",
       "context": "ESTUDIO CREATIVO O AGENCIA"
     },
     {
-      "color": const Color(0xFF8E24AA), // Púrpura/Violeta
+      "color": const Color(0xFF8E24AA),
       "name": "Violeta Zen",
       "emocion": "relajación mental absoluta, equilibrio espiritual, transmutación y paz",
       "context": "SPA Y CENTRO DE MEDITACIÓN"
     },
     {
-      "color": const Color(0xFF8B4513), // Café
+      "color": const Color(0xFF8B4513),
       "name": "Café Tradición",
       "emocion": "tradición ancestral, conexión con las raíces, calidez rústica y durabilidad",
       "context": "HISTORIA Y ARQUEOLOGÍA"
     },
     {
-      "color": const Color(0xFFE91E63), // Rosa
+      "color": const Color(0xFFE91E63),
       "name": "Rosa Empatía",
       "emocion": "creatividad sin límites, dulzura, empatía profunda y calidez de cuidado",
       "context": "PROYECTO SOCIAL O JUGUETES"
     },
     {
-      "color": const Color(0xFF00BEC4), // Turquesa
+      "color": const Color(0xFF00BEC4),
       "name": "Turquesa Vital",
       "emocion": "frescura higiénica, claridad mental, innovación limpia y tecnología médica",
       "context": "ODONTOLOGÍA Y SOFTWARE MÉDICO"
     },
     {
-      "color": const Color(0xFFFFD166), // Dorado
+      "color": const Color(0xFFFFD166),
       "name": "Dorado Éxito",
       "emocion": "éxito supremo, prosperidad económica, prestigio histórico y calidad artesanal",
       "context": "JOYERÍA DE LUJO Y LICORES PREMIUM"
     },
     {
-      "color": const Color(0xFF78909C), // Gris
+      "color": const Color(0xFF78909C),
       "name": "Gris Profesional",
       "emocion": "neutralidad sobria, balance corporativo, objetividad moderna y minimalismo",
       "context": "ESTUDIO DE ARQUITECTURA Y MODA"
@@ -165,12 +165,11 @@ class LevelGenerator {
       // Degradados (Nivel 3)
       final random = math.Random(nivel * 79 + 23);
       
-      // Generación procedural de colores extremos en HSL
       double h1 = random.nextDouble() * 360;
-      double h2 = (h1 + 60 + random.nextDouble() * 120) % 360; // 60 a 180 de diferencia
-      double s = 0.65 + random.nextDouble() * 0.25; // 65% a 90%
-      double l1 = 0.35 + random.nextDouble() * 0.15; // 35% a 50%
-      double l2 = 0.55 + random.nextDouble() * 0.15; // 55% a 70%
+      double h2 = (h1 + 60 + random.nextDouble() * 120) % 360;
+      double s = 0.65 + random.nextDouble() * 0.25;
+      double l1 = 0.35 + random.nextDouble() * 0.15;
+      double l2 = 0.55 + random.nextDouble() * 0.15;
 
       Color colorInicio = HSLColor.fromAHSL(1.0, h1, s, l1).toColor();
       Color colorFin = HSLColor.fromAHSL(1.0, h2, s, l2).toColor();
@@ -203,7 +202,7 @@ class LevelGenerator {
         colorName: "Paso de color intermedio",
       );
     } else if (tipo == 4) {
-      // Contraste Cromático / Legibilidad (Nivel 4 / tipo == 4)
+      // Contraste Cromático / Legibilidad (Nivel 4)
       final random = math.Random(nivel * 61 + 37);
       bool fondoClaro = random.nextBool();
 
@@ -217,22 +216,18 @@ class LevelGenerator {
       List<Color> distractors = [];
 
       if (fondoClaro) {
-        // Fondo claro: el texto correcto debe ser muy oscuro
         correctColor = HSLColor.fromAHSL(1.0, (h + 180) % 360, 0.4, 0.15).toColor();
-        distractors.add(HSLColor.fromAHSL(1.0, h, s, l - 0.1).toColor()); // Muy parecido al fondo
-        distractors.add(HSLColor.fromAHSL(1.0, (h + 30) % 360, s, 0.85).toColor()); // Claro
-        distractors.add(Colors.white); // Blanco (legibilidad malísima sobre fondo claro)
+        distractors.add(HSLColor.fromAHSL(1.0, h, s, l - 0.1).toColor());
+        distractors.add(HSLColor.fromAHSL(1.0, (h + 30) % 360, s, 0.85).toColor());
+        distractors.add(Colors.white);
       } else {
-        // Fondo oscuro: el texto correcto debe ser muy claro
         correctColor = HSLColor.fromAHSL(1.0, h, 0.9, 0.85).toColor();
-        distractors.add(HSLColor.fromAHSL(1.0, h, s, l + 0.1).toColor()); // Muy parecido al fondo
-        distractors.add(HSLColor.fromAHSL(1.0, (h + 180) % 360, s, 0.2).toColor()); // Muy oscuro
-        distractors.add(const Color(0xFF212121)); // Negro carbón
+        distractors.add(HSLColor.fromAHSL(1.0, h, s, l + 0.1).toColor());
+        distractors.add(HSLColor.fromAHSL(1.0, (h + 180) % 360, s, 0.2).toColor());
+        distractors.add(const Color(0xFF212121));
       }
 
       List<Color> options = [correctColor, ...distractors]..shuffle(random);
-
-      // Asegurar que no haya duplicados idénticos en la lista de opciones
       options = options.toSet().toList();
       while (options.length < 4) {
         options.add(HSLColor.fromAHSL(1.0, (h + random.nextDouble() * 360) % 360, 0.5, fondoClaro ? 0.9 : 0.1).toColor());
@@ -262,7 +257,7 @@ class LevelGenerator {
         previewTextBottom: textoPareja[1],
       );
     } else if (tipo == 5) {
-      // Armonías Cromáticas (Nivel 5 / tipo == 5)
+      // Armonías Cromáticas (Nivel 5)
       final random = math.Random(nivel * 53 + 17);
       final basePsic = _psicologiaColor[random.nextInt(_psicologiaColor.length)];
       Color baseColor = basePsic["color"];
@@ -301,9 +296,8 @@ class LevelGenerator {
         options: options,
       );
     } else if (tipo == 6) {
-      // Daltonismo (Nivel 6 / tipo == 6)
+      // Daltonismo (Nivel 6)
       final random = math.Random(nivel * 47 + 19);
-      
       final int combinedIndex = (nivel ~/ 12) % 9;
       final int blindTypeInt = combinedIndex % 3;
       final int configIndex = combinedIndex ~/ 3;
@@ -317,11 +311,11 @@ class LevelGenerator {
 
       if (blindTypeInt == 0) {
         blindType = "Protanopia";
-        explanation = "Bajo Protanopia, los tonos rojos se ven oscurecidos y desaturados, confundiéndose con marrones y verdes. Los colores con longitudes de onda más cortas o muy contrastantes como el amarillo, blanco o azul conservan alta visibilidad.";
+        explanation = "Bajo Protanopia, los tonos rojos se ven oscurecidos y desaturados, confundiéndose con marrones y verdes. Los colores con longitudes de onda más cortas o muy contrastantes conservan alta visibilidad.";
         
         if (configIndex == 0) {
-          targetColor = const Color(0xFFE53935); // Rojo Cadmio
-          correctColor = const Color(0xFFFFB300); // Amarillo Cromo
+          targetColor = const Color(0xFFE53935);
+          correctColor = const Color(0xFFFFB300);
           options = [
             const Color(0xFFE53935),
             const Color(0xFF43A047),
@@ -330,33 +324,33 @@ class LevelGenerator {
           ];
           question = "Bajo simulación de PROTANOPIA (ceguera al rojo), selecciona el único color que conserva una visualización de alta visibilidad (Amarillo Cromo):";
         } else if (configIndex == 1) {
-          targetColor = const Color(0xFFC62828); // Rojo Oscuro
-          correctColor = const Color(0xFF0288D1); // Celeste
+          targetColor = const Color(0xFFC62828);
+          correctColor = const Color(0xFF0288D1);
           options = [
             const Color(0xFFC62828),
             const Color(0xFFD84315),
             const Color(0xFF757575),
             const Color(0xFF0288D1),
           ];
-          question = "Bajo simulación de PROTANOPIA (donde el rojo oscuro parece casi negro), selecciona el color de contraste más brillante y legible (Celeste):";
+          question = "Bajo simulación de PROTANOPIA, selecciona el color de contraste más brillante y legible (Celeste):";
         } else {
-          targetColor = const Color(0xFFC2185B); // Magenta
-          correctColor = const Color(0xFFFFFFFF); // Blanco
+          targetColor = const Color(0xFFC2185B);
+          correctColor = const Color(0xFFFFFFFF);
           options = [
             const Color(0xFFC2185B),
             const Color(0xFF6A1B9A),
             const Color(0xFF558B2F),
             const Color(0xFFFFFFFF),
           ];
-          question = "Bajo simulación de PROTANOPIA (que altera los tonos rojizos y violetas), selecciona la opción con mayor contraste acromático y claridad (Blanco):";
+          question = "Bajo simulación de PROTANOPIA, selecciona la opción con mayor contraste acromático y claridad (Blanco):";
         }
       } else if (blindTypeInt == 1) {
         blindType = "Deuteranopia";
         explanation = "Bajo Deuteranopia, los tonos verdes pierden saturación y se confunden con rojos y violetas. Los colores amarillos o azules destacan con claridad.";
 
         if (configIndex == 0) {
-          targetColor = const Color(0xFF43A047); // Verde Viridián
-          correctColor = const Color(0xFFFFB300); // Amarillo Cromo
+          targetColor = const Color(0xFF43A047);
+          correctColor = const Color(0xFFFFB300);
           options = [
             const Color(0xFF43A047),
             const Color(0xFFE53935),
@@ -365,33 +359,33 @@ class LevelGenerator {
           ];
           question = "Bajo simulación de DEUTERANOPIA (ceguera al verde), selecciona el único color que conserva una visualización de alta visibilidad (Amarillo Cromo):";
         } else if (configIndex == 1) {
-          targetColor = const Color(0xFF9E9D24); // Limón
-          correctColor = const Color(0xFF1976D2); // Azul Rey
+          targetColor = const Color(0xFF9E9D24);
+          correctColor = const Color(0xFF1976D2);
           options = [
             const Color(0xFF9E9D24),
             const Color(0xFFEF6C00),
             const Color(0xFF9E9E9E),
             const Color(0xFF1976D2),
           ];
-          question = "Bajo simulación de DEUTERANOPIA (que dificulta distinguir verdes y marrones), selecciona la opción que destaca con un contraste nítido y frío (Azul Rey):";
+          question = "Bajo simulación de DEUTERANOPIA, selecciona la opción que destaca con un contraste nítido y frío (Azul Rey):";
         } else {
-          targetColor = const Color(0xFF558B2F); // Verde Oliva
-          correctColor = const Color(0xFFFF4081); // Rosado Neón
+          targetColor = const Color(0xFF558B2F);
+          correctColor = const Color(0xFFFF4081);
           options = [
             const Color(0xFF558B2F),
             const Color(0xFF4E342E),
             const Color(0xFFC62828),
             const Color(0xFFFF4081),
           ];
-          question = "Bajo simulación de DEUTERANOPIA (donde el verde oliva y el café se solapan), selecciona el pigmento que destaca por su alta luminosidad (Rosado Neón):";
+          question = "Bajo simulación de DEUTERANOPIA, selecciona el pigmento que destaca por su alta luminosidad (Rosado Neón):";
         }
       } else {
         blindType = "Tritanopia";
-        explanation = "Bajo Tritanopia, se confunden los tonos azules con verdes y amarillos con violetas. Los tonos rojos y naranjas son los que mejor conservan su identidad y visibilidad.";
+        explanation = "Bajo Tritanopia, se confunden los tonos azules con verdes y amarillos con violetas. Los tonos rojos y naranjas son los que mejor conservan su identidad.";
 
         if (configIndex == 0) {
-          targetColor = const Color(0xFF1E88E5); // Azul Cobalto
-          correctColor = const Color(0xFFE53935); // Rojo Cadmio
+          targetColor = const Color(0xFF1E88E5);
+          correctColor = const Color(0xFFE53935);
           options = [
             const Color(0xFF1E88E5),
             const Color(0xFF00BEC4),
@@ -400,25 +394,25 @@ class LevelGenerator {
           ];
           question = "Bajo simulación de TRITANOPIA (ceguera al azul), selecciona el color de contraste más vivo y visible en la pantalla (Rojo Cadmio):";
         } else if (configIndex == 1) {
-          targetColor = const Color(0xFFFFD54F); // Amarillo Claro
-          correctColor = const Color(0xFF4A148C); // Púrpura Oscuro
+          targetColor = const Color(0xFFFFD54F);
+          correctColor = const Color(0xFF4A148C);
           options = [
             const Color(0xFFFFD54F),
             const Color(0xFFFFB74D),
             const Color(0xFFF8BBD0),
             const Color(0xFF4A148C),
           ];
-          question = "Bajo simulación de TRITANOPIA (donde el amarillo y el rosa se fusionan), selecciona el color frío que mantiene un excelente nivel de legibilidad (Púrpura Oscuro):";
+          question = "Bajo simulación de TRITANOPIA, selecciona el color frío que mantiene un excelente nivel de legibilidad (Púrpura Oscuro):";
         } else {
-          targetColor = const Color(0xFF00ACC1); // Turquesa
-          correctColor = const Color(0xFFF4511E); // Rojo Naranja
+          targetColor = const Color(0xFF00ACC1);
+          correctColor = const Color(0xFFF4511E);
           options = [
             const Color(0xFF00ACC1),
             const Color(0xFF4FC3F7),
             const Color(0xFF4CAF50),
             const Color(0xFFF4511E),
           ];
-          question = "Bajo simulación de TRITANOPIA (que mezcla los cianes, verdes y azules), selecciona el color cálido óptimo para alertar al usuario (Rojo Naranja):";
+          question = "Bajo simulación de TRITANOPIA, selecciona el color cálido óptimo para alertar al usuario (Rojo Naranja):";
         }
       }
 
@@ -434,7 +428,7 @@ class LevelGenerator {
         explanation: explanation,
       );
     } else if (tipo == 7) {
-      // Laboratorio RGB (Nivel 7 / tipo == 7)
+      // Laboratorio RGB (Nivel 7)
       final random = math.Random(nivel * 41 + 29);
       final basePsic = _psicologiaColor[random.nextInt(_psicologiaColor.length)];
       
@@ -447,7 +441,7 @@ class LevelGenerator {
         targetColorName: basePsic["name"],
       );
     } else if (tipo == 8) {
-      // Temperatura del Color (Nivel 8 / tipo == 8)
+      // Temperatura del Color (Nivel 8)
       final random = math.Random(nivel * 31 + 43);
       final List<Color> warmPool = [
         const Color(0xFFE53935), 
@@ -480,7 +474,7 @@ class LevelGenerator {
         allOptions: allOptions,
       );
     } else if (tipo == 9) {
-      // Código HEX (Nivel 9 / tipo == 9)
+      // Código HEX (Nivel 9)
       final random = math.Random(nivel * 43 + 31);
       final psic = _psicologiaColor[random.nextInt(_psicologiaColor.length)];
       final Color correctColor = psic["color"];
@@ -506,15 +500,14 @@ class LevelGenerator {
         options: options,
       );
     } else if (tipo == 10) {
-      // Ilusión Óptica (Nivel 10 / tipo == 10)
+      // Ilusión Óptica (Nivel 10)
       final random = math.Random(nivel * 37 + 47);
       
-      // 4 Setups de Josef Albers (Fondo Izq, Fondo Der, Color Núcleo Real, Distractores)
       final List<Map<String, dynamic>> setups = [
         {
-          "leftBg": const Color(0xFF1E88E5), // Azul
-          "rightBg": const Color(0xFFFFB300), // Amarillo
-          "inner": const Color(0xFF8E8E83), // Gris
+          "leftBg": const Color(0xFF1E88E5),
+          "rightBg": const Color(0xFFFFB300),
+          "inner": const Color(0xFF8E8E83),
           "options": [
             const Color(0xFF8E8E83),
             const Color(0xFF8E8E9E), 
@@ -523,9 +516,9 @@ class LevelGenerator {
           ]
         },
         {
-          "leftBg": const Color(0xFFE53935), // Rojo
-          "rightBg": const Color(0xFF43A047), // Verde
-          "inner": const Color(0xFFC58E59), // Ocre
+          "leftBg": const Color(0xFFE53935),
+          "rightBg": const Color(0xFF43A047),
+          "inner": const Color(0xFFC58E59),
           "options": [
             const Color(0xFFC58E59),
             const Color(0xFFC59E59), 
@@ -534,9 +527,9 @@ class LevelGenerator {
           ]
         },
         {
-          "leftBg": const Color(0xFF8E24AA), // Púrpura
-          "rightBg": const Color(0xFFEF6C00), // Naranja
-          "inner": const Color(0xFFD87D9A), // Rosa sucio
+          "leftBg": const Color(0xFF8E24AA),
+          "rightBg": const Color(0xFFEF6C00),
+          "inner": const Color(0xFFD87D9A),
           "options": [
             const Color(0xFFD87D9A),
             const Color(0xFFC87D9A), 
@@ -545,9 +538,9 @@ class LevelGenerator {
           ]
         },
         {
-          "leftBg": const Color(0xFF0D47A1), // Azul Oscuro
-          "rightBg": const Color(0xFF00E5FF), // Cian
-          "inner": const Color(0xFF5C8E9D), // Pizarra
+          "leftBg": const Color(0xFF0D47A1),
+          "rightBg": const Color(0xFF00E5FF),
+          "inner": const Color(0xFF5C8E9D),
           "options": [
             const Color(0xFF5C8E9D),
             const Color(0xFF4C8E9D), 
@@ -567,7 +560,7 @@ class LevelGenerator {
       List<Color> options = List<Color>.from(setup["options"])..shuffle(random);
       
       String question = "Teoría del Contraste Simultáneo: Debido al fondo contrastante, el núcleo parece cambiar. Selecciona el pigmento real del núcleo:";
-      String explanation = "Dos colores idénticos se perciben de forma diferente dependiendo del fondo sobre el que se encuentren (Teoría de Josef Albers). El núcleo en ambos lados es idéntico.";
+      String explanation = "Dos colores idénticos se perciben de forma diferente dependiendo del fondo sobre el que se encuentren (Teoría de Josef Albers).";
       
       return AlbersLevelModel(
         level: nivel,
@@ -579,7 +572,7 @@ class LevelGenerator {
         explanation: explanation,
       );
     } else if (tipo == 11) {
-      // Atmósferas (Nivel 11 / tipo == 11)
+      // Atmósferas (Nivel 11)
       final random = math.Random(nivel * 29 + 61);
       final List<Map<String, dynamic>> conceptos = [
         {
@@ -602,27 +595,6 @@ class LevelGenerator {
           "wrong1": [const Color(0xFF3E2723), const Color(0xFF4E342E), const Color(0xFF5D4037), const Color(0xFF6D4C41), const Color(0xFF7E57C2)],
           "wrong2": [const Color(0xFF1B5E20), const Color(0xFF2E7D32), const Color(0xFF388E3C), const Color(0xFF4CAF50), const Color(0xFF81C784)],
           "wrong3": [const Color(0xFF0D47A1), const Color(0xFF1565C0), const Color(0xFF1976D2), const Color(0xFF1E88E5), const Color(0xFF2196F3)]
-        },
-        {
-          "name": "NOCTURNO DE NEÓN",
-          "correct": [const Color(0xFF0F2027), const Color(0xFF203A43), const Color(0xFF2C5364), const Color(0xFF00FF87), const Color(0xFF60EFFF)],
-          "wrong1": [const Color(0xFFFFB300), const Color(0xFFFFD54F), const Color(0xFFFFE082), const Color(0xFFFFF9C4), const Color(0xFFFFFDE7)],
-          "wrong2": [const Color(0xFF8B4513), const Color(0xFFA0522D), const Color(0xFFCD853F), const Color(0xFFDEB887), const Color(0xFFF5F5DC)],
-          "wrong3": [const Color(0xFFE53935), const Color(0xFFD81B60), const Color(0xFF8E24AA), const Color(0xFFC2185B), const Color(0xFFE91E63)]
-        },
-        {
-          "name": "CIBER-ESPACIO RETRO",
-          "correct": [const Color(0xFF00F5D4), const Color(0xFF7B2CBF), const Color(0xFF9D4EDD), const Color(0xFFE0AAFF), const Color(0xFFF15BB5)],
-          "wrong1": [const Color(0xFF2E7D32), const Color(0xFF388E3C), const Color(0xFF4CAF50), const Color(0xFF66BB6A), const Color(0xFF81C784)],
-          "wrong2": [const Color(0xFF3E2723), const Color(0xFF4E342E), const Color(0xFF5D4037), const Color(0xFF6D4C41), const Color(0xFF7E57C2)],
-          "wrong3": [const Color(0xFFD84315), const Color(0xFFE64A19), const Color(0xFFF4511E), const Color(0xFFFF5722), const Color(0xFFFF7043)]
-        },
-        {
-          "name": "MINERAL SUBTERRÁNEO",
-          "correct": [const Color(0xFF37474F), const Color(0xFF455A64), const Color(0xFF00E676), const Color(0xFF00B0FF), const Color(0xFF90A4AE)],
-          "wrong1": [const Color(0xFFF8BBD0), const Color(0xFFF48FB1), const Color(0xFFF06292), const Color(0xFFEC407A), const Color(0xFFE91E63)],
-          "wrong2": [const Color(0xFFFFD54F), const Color(0xFFFFCA28), const Color(0xFFFFB300), const Color(0xFFFF8F00), const Color(0xFFFF6F00)],
-          "wrong3": [const Color(0xFF6D4C41), const Color(0xFF5D4037), const Color(0xFF4E342E), const Color(0xFF3E2723), const Color(0xFF271B15)]
         }
       ];
       
@@ -663,7 +635,7 @@ class LevelGenerator {
       
       List<Color> shuffled = List<Color>.from(sequence)..shuffle(random);
       
-      String question = "Ordenamiento Tonal: Selecciona los pigmentos en orden secuencial estricto, desde el más DESATURADO (grisáceo) al más SATURADO (puro):";
+      String question = "Ordenamiento Tonal: Selecciona los pigmentos en orden secuencial estricto, desde el más DESATURADO al más SATURADO:";
       
       return SaturationLevelModel(
         level: nivel,
@@ -675,47 +647,33 @@ class LevelGenerator {
     }
   }
 
-  /// Obtiene un dato curioso educativo contextualizado según el tipo de nivel
-  static String obtenerDatoCurioso(dynamic model) {
-    if (model is MixLevelModel) {
-      return "Mezclar pigmentos físicos es una síntesis sustractiva: cada reactivo que añades absorbe más luz, por lo que el color final se vuelve más oscuro.";
+  /// Devuelve un dato curioso sobre la teoría del color según el modelo de nivel
+  static String obtenerDatoCurioso(dynamic levelModel) {
+    if (levelModel is MixLevelModel) {
+      return "En el modelo sustractivo (pigmentos reales), mezclar colores primarios absorbe más luz, produciendo tonos más oscuros.";
+    } else if (levelModel is SearchLevelModel) {
+      return "La psicología del color demuestra que hasta el 90% de los juicios rápidos sobre productos se basan únicamente en el color.";
+    } else if (levelModel is GradientLevelModel) {
+      return "El ojo humano puede distinguir más gradaciones del color verde que de cualquier otro color visible.";
+    } else if (levelModel is ContrastLevelModel) {
+      return "El estándar WCAG recomienda una relación de contraste mínima de 4.5:1 para garantizar la accesibilidad visual.";
+    } else if (levelModel is HarmonyLevelModel) {
+      return "Los colores complementarios situados opuestos en el círculo cromático crean la máxima tensión visual y dinamismo.";
+    } else if (levelModel is BlindLevelModel) {
+      return "Aproximadamente el 8% de los hombres y el 0.5% de las mujeres experimentan algún tipo de deficiencia en la visión cromática.";
+    } else if (levelModel is RgbLevelModel) {
+      return "El modelo RGB es aditivo: al combinar Rojo, Verde y Azul al 100% de intensidad (255, 255, 255) se obtiene la luz blanca pura.";
+    } else if (levelModel is TempLevelModel) {
+      return "Los colores cálidos parecen avanzar visualmente hacia el espectador, mientras que los colores fríos tienden a receder.";
+    } else if (levelModel is HexLevelModel) {
+      return "Los códigos hexadecimales representan valores de 8 bits para Rojo, Verde y Azul en sistema base 16 (#RRGGBB).";
+    } else if (levelModel is AlbersLevelModel) {
+      return "El artista Josef Albers demostró que el contexto altera radicalmente nuestra percepción cromática (contraste simultáneo).";
+    } else if (levelModel is AtmosphereLevelModel) {
+      return "Las paletas cromáticas evocan respuestas emocionales instantáneas basadas en asociaciones culturales y naturales.";
+    } else if (levelModel is SaturationLevelModel) {
+      return "La saturación define la pureza o intensidad de un color; a menor saturación, el tono se vuelve más acromático (gris).";
     }
-    if (model is SearchLevelModel) {
-      final String emotion = model.instruction.contains("transmita")
-          ? model.instruction.split("transmita").last.replaceAll(":", "").trim()
-          : "emociones";
-      return "El tono '${model.colorName}' se asocia con '$emotion'. En publicidad y diseño de marcas, los colores estimulan áreas cerebrales que influyen en las compras.";
-    }
-    if (model is GradientLevelModel) {
-      return "Las transiciones en HSL son preferidas por diseñadores porque representan cómo la luz incide sobre un objeto: el tono (H) gira en el círculo y la luminosidad (L) añade brillo.";
-    }
-    if (model is ContrastLevelModel) {
-      return "Para cumplir con la accesibilidad WCAG nivel AA, el contraste mínimo del texto pequeño debe ser de al menos 4.5:1. Los textos grandes o botones requieren un mínimo de 3:1.";
-    }
-    if (model is HarmonyLevelModel) {
-      return "El esquema '${model.harmonyType}' utiliza la relación geométrica del círculo cromático. Los complementarios se colocan opuestos porque crean la mayor vibración visual.";
-    }
-    if (model is BlindLevelModel) {
-      return "Bajo la condición de ${model.blindType}, ciertos fotoreceptores del ojo no funcionan correctamente. Por eso, usar amarillo o azul para alertas clave es una buena práctica de accesibilidad.";
-    }
-    if (model is RgbLevelModel) {
-      return "El modelo RGB es aditivo: mezcla luces directamente en la pantalla de tu móvil. Al sumar el máximo de Rojo, Verde y Azul (255, 255, 255) obtienes luz blanca pura.";
-    }
-    if (model is TempLevelModel) {
-      return "La temperatura del color (cálido vs frío) influye en el ritmo cardíaco y la percepción del espacio: los tonos cálidos hacen que los objetos parezcan más cercanos.";
-    }
-    if (model is HexLevelModel) {
-      return "Los códigos HEX definen la mezcla RGB en formato base 16 (hexadecimal): los dígitos 00-FF representan la cantidad de Rojo, Verde y Azul respectivamente.";
-    }
-    if (model is AlbersLevelModel) {
-      return "El pintor Josef Albers demostró en 1963 la relatividad del color: un mismo color físico se percibe como dos tonos completamente distintos dependiendo de su fondo.";
-    }
-    if (model is AtmosphereLevelModel) {
-      return "En el cine, directores como Wes Anderson utilizan paletas de color con un concepto dominante para definir la época, emoción o personalidad de un personaje.";
-    }
-    if (model is SaturationLevelModel) {
-      return "La saturación es la pureza del color. Un color al 0% de saturación se convierte en un tono de gris neutro, mientras que al 100% es el pigmento más vivo posible.";
-    }
-    return "El estudio científico del color une la física de la luz, la química de los pigmentos y la biología de nuestros ojos.";
+    return "La teoría del color une física, biología y arte para transformar nuestra percepción del mundo visual.";
   }
 }

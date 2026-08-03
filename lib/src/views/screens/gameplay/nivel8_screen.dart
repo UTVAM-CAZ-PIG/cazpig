@@ -143,7 +143,7 @@ class Nivel8Screen extends StatelessWidget {
   }) {
     return DragTarget<Color>(
       onAcceptWithDetails: (details) {
-        controller.classifyColor(details.data, zone);
+        controller.classifyColor(details.data, zone, context);
       },
       builder: (context, candidateData, rejectedData) {
         final bool isOver = candidateData.isNotEmpty;
@@ -186,7 +186,7 @@ class Nivel8Screen extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final Color color = colors[index];
                           return GestureDetector(
-                            onTap: () => controller.classifyColor(color, "available"),
+                            onTap: () => controller.classifyColor(color, "available", context),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: color,

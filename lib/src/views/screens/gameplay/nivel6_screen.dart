@@ -259,7 +259,10 @@ class _Nivel6ScreenState extends State<Nivel6Screen> {
                     borderRadius: 20,
                     backgroundColor: color,
                     shadowColor: _getShadowColor(color),
-                    onTap: () => controller.seleccionarColor(color),
+                    onTap: () {
+                      controller.seleccionarColor(color);
+                      controller.comprobarResultadoAutomatico(context);
+                    },
                     child: Container(
                       alignment: Alignment.bottomCenter,
                       padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),

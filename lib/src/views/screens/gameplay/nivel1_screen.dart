@@ -102,9 +102,10 @@ class Nivel1Screen extends StatelessWidget {
                     controller.seleccionarColor(col);
 
                     if (controller.listoParaComprobar) {
-                      await Future.delayed(const Duration(milliseconds: 180));
+                      await Future.delayed(const Duration(milliseconds: 150));
                       if (context.mounted) {
-                        controller.comprobarResultadoAutomatico(context);
+                        final state = context.findAncestorStateOfType<BaseGameplayScreenState<MixLevelModel, Nivel1Controller>>();
+                        state?.comprobar();
                       }
                     }
                   },

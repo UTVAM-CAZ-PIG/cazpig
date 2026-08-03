@@ -50,7 +50,7 @@ class Nivel2Screen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                datos.instruction, // mapped to brief
+                datos.instruction,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -100,7 +100,8 @@ class Nivel2Screen extends StatelessWidget {
                     borderRadius: 20,
                     onTap: () {
                       controller.seleccionarColor(itemColor);
-                      controller.comprobarResultadoAutomatico(context);
+                      final state = context.findAncestorStateOfType<BaseGameplayScreenState<SearchLevelModel, Nivel2Controller>>();
+                      state?.comprobar();
                     },
                     child: Container(
                       alignment: Alignment.bottomCenter,

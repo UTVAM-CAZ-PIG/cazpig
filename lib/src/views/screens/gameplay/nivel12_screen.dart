@@ -98,7 +98,12 @@ class Nivel12Screen extends StatelessWidget {
                       borderRadius: 18,
                       backgroundColor: color,
                       shadowColor: _getShadowColor(color),
-                      onTap: () => controller.toggleColor(color),
+                      onTap: () {
+                        controller.toggleColor(color);
+                        if (controller.listoParaComprobar) {
+                          controller.verificarYMostrarAlerta(context);
+                        }
+                      },
                       child: Container(
                         alignment: Alignment.bottomCenter,
                         padding: const EdgeInsets.only(bottom: 6),
